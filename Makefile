@@ -48,7 +48,7 @@ type-check:
 
 security-check:
 	poetry run bandit -r src/
-	poetry run safety scan
+	poetry run pip-audit --desc --format=columns
 
 # Quality gates (run all checks)
 quality-check: lint type-check security-check
