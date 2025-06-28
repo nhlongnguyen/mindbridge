@@ -198,6 +198,7 @@ class TestDocumentProcessor:
 - **Import Sorter**: isort with Black compatibility
 - **Linter**: Ruff (replaces flake8, pylint, isort, and more)
 - **Type Checker**: mypy with strict mode enabled
+- **File Format**: All files must end with a single newline character
 
 ### Pre-commit Configuration
 ```yaml
@@ -355,6 +356,66 @@ def analyze_repository(
 
 ### Implementation Workflow
 
+**Workflow Diagram:**
+
+```mermaid
+flowchart TD
+    A[Fetch Task from GitHub Projects] --> B[Understand Requirements]
+    B --> C[Create Implementation Plan]
+    C --> D[Plan Review & Approval]
+    D --> E[Create Feature Branch]
+    E --> F[Update Task Status to 'In Progress']
+    F --> G[TDD: Write Failing Tests]
+    G --> H[Implement Code to Pass Tests]
+    H --> I[Run Test Suite]
+
+    I --> J{All Tests Pass?}
+    J -->|No| K[Fix Failing Tests]
+    K --> I
+    J -->|Yes| L[Run Pre-commit Checks]
+
+    L --> M{Pre-commit Checks Pass?}
+    M -->|No| N[Fix Linting/Type/Format Issues]
+    N --> L
+    M -->|Yes| O[Stage & Commit Changes]
+
+    O --> P[Push Branch]
+    P --> Q[Create Pull Request]
+    Q --> R[Update GitHub Issue Status]
+
+    style I fill:#e1f5fe
+    style J fill:#fff3e0
+    style K fill:#ffebee
+    style L fill:#e8f5e8
+    style M fill:#fff3e0
+    style N fill:#ffebee
+    style O fill:#e8f5e8
+
+    subgraph "Quality Gates Loop"
+        I
+        J
+        K
+        L
+        M
+        N
+    end
+
+    subgraph "Test Commands"
+        T1["python3 -m poetry run pytest tests/ --cov=src --cov-report=html"]
+    end
+
+    subgraph "Pre-commit Commands"
+        P1["python3 -m poetry run ruff check src/ tests/ --fix"]
+        P2["python3 -m poetry run black src/ tests/"]
+        P3["python3 -m poetry run mypy src/"]
+    end
+
+    I -.-> T1
+    L -.-> P1
+    L -.-> P2
+    L -.-> P3
+```
+
 **Phase 1: Task Analysis and Planning**
 ```markdown
 ## Implementation Plan Template (Required in GitHub Issues)
@@ -415,10 +476,10 @@ def new_feature(self):
 ```
 
 **Phase 3: Quality Assurance and Delivery**
-- Run full test suite: `pytest tests/ --cov=src --cov-report=html`
-- Check linting: `ruff check src/ tests/`
-- Format code: `black src/ tests/`
-- Type checking: `mypy src/`
+- Run full test suite: `python3 -m poetry run pytest tests/ --cov=src --cov-report=html`
+- Check linting: `python3 -m poetry run ruff check src/ tests/ --fix`
+- Format code: `python3 -m poetry run black src/ tests/`
+- Type checking: `python3 -m poetry run mypy src/`
 - Update documentation as needed
 
 **Phase 4: Commit and Pull Request**
@@ -483,21 +544,93 @@ Closes #XXX
 
 ### Required Tools
 ```bash
-# Python environment
-pyenv install 3.11.7
-pyenv local 3.11.7
-pip install poetry
+# Python environment (Python 3.12+ required)
+# Poetry is already installed via pip
 
-# Development dependencies
-poetry install --with dev,test
+# One-time setup: Install all dependencies
+python3 -m poetry install
 
-# Pre-commit hooks
-pre-commit install
+# Optional: Install pre-commit hooks
+python3 -m poetry run pre-commit install
 
 # IDE configuration
 # - Configure Black, Ruff, and mypy integration
 # - Set up pytest runner
 # - Enable type checking in editor
+```
+
+### Development Commands (Use These for This Project)
+
+**Code Quality & Linting:**
+```bash
+# Lint and auto-fix issues
+python3 -m poetry run ruff check src/ --fix
+python3 -m poetry run ruff check tests/ --fix
+
+# Format code
+python3 -m poetry run black src/ tests/
+
+# Type checking
+python3 -m poetry run mypy src/
+
+# Run all quality checks
+python3 -m poetry run ruff check src/ --fix && \
+python3 -m poetry run black src/ tests/ && \
+python3 -m poetry run mypy src/
+```
+
+**Testing:**
+```bash
+# Run all tests
+python3 -m poetry run pytest tests/ -v
+
+# Run tests with coverage
+python3 -m poetry run pytest tests/ --cov=src --cov-report=html
+
+# Run specific test file
+python3 -m poetry run pytest tests/database/test_models.py -v
+
+# Run tests matching pattern
+python3 -m poetry run pytest tests/ -k "test_vector" -v
+```
+
+**Application Commands:**
+```bash
+# Start development server
+python3 -m poetry run uvicorn src.mindbridge.main:app --reload
+
+# Start with custom host/port
+python3 -m poetry run uvicorn src.mindbridge.main:app --host 0.0.0.0 --port 8080 --reload
+
+# Run database migrations (when available)
+python3 -m poetry run alembic upgrade head
+
+# Generate new migration
+python3 -m poetry run alembic revision --autogenerate -m "Description"
+```
+
+**Dependency Management:**
+```bash
+# Add new dependency
+python3 -m poetry add package-name
+
+# Add development dependency
+python3 -m poetry add --group dev package-name
+
+# Update dependencies
+python3 -m poetry update
+
+# Show dependency tree
+python3 -m poetry show --tree
+```
+
+**Quality Gates (Run Before Commits):**
+```bash
+# Complete quality check pipeline
+python3 -m poetry run ruff check src/ tests/ --fix && \
+python3 -m poetry run black src/ tests/ && \
+python3 -m poetry run mypy src/ && \
+python3 -m poetry run pytest tests/ --cov=src --cov-fail-under=85
 ```
 
 ### Environment Variables
@@ -515,10 +648,12 @@ LOG_LEVEL=INFO
 ## Continuous Integration Requirements
 
 ### GitHub Actions Workflow
-- All pushes must trigger CI pipeline
-- CI must run: tests, linting, type checking, security scanning
+- All pushes and pull requests trigger CI pipeline
+- CI must run: pre-commit hooks, tests
+- All code quality checks (linting, type checking, formatting) are handled by pre-commit hooks
+- Security scanning is handled by pre-commit hooks (bandit)
 - PR requirements: CI passing, code review approval, no merge conflicts
-- Automated deployment to staging on main branch updates
+- Automated deployment to staging on main branch pushes only
 
 ### Quality Gates
 - Test coverage must be >= 85%
