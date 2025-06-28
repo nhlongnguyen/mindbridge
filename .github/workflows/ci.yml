@@ -102,6 +102,7 @@ jobs:
         DATABASE_URL: postgresql://postgres:${{ secrets.TEST_DB_PASSWORD || 'testpassword' }}@localhost:5432/mindbridge_test
         REDIS_URL: redis://localhost:6379/0
         JWT_SECRET_KEY: ${{ secrets.TEST_JWT_SECRET || 'test-secret-key-for-ci' }}
+        ALLOWED_ORIGINS: "http://localhost:3000,http://localhost:8080"
       run: poetry run pytest --cov-report=xml
 
     - name: Upload coverage to Codecov

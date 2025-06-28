@@ -1,5 +1,7 @@
 """Tests for OpenTelemetry tracing setup."""
 
+from unittest.mock import MagicMock, patch
+
 from mindbridge.observability.tracing import configure_tracing, get_tracer
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
@@ -15,21 +17,37 @@ class TestTracingConfiguration:
         tracer_provider = trace.get_tracer_provider()
         assert isinstance(tracer_provider, TracerProvider)
 
-    def test_configure_tracing_with_custom_service_name(self) -> None:
+    @patch("mindbridge.observability.tracing.trace.set_tracer_provider")
+    @patch("mindbridge.observability.tracing.TracerProvider")
+    def test_configure_tracing_with_custom_service_name(
+        self, mock_tracer_provider_class: MagicMock, mock_set_tracer_provider: MagicMock
+    ) -> None:
         """Expected use case: Should use provided service name in resource."""
+        mock_tracer_provider = MagicMock()
+        mock_tracer_provider_class.return_value = mock_tracer_provider
+
         configure_tracing(service_name="custom-service")
 
-        tracer_provider = trace.get_tracer_provider()
-        resource = tracer_provider.resource
-        assert resource.attributes.get("service.name") == "custom-service"
+        # Verify TracerProvider was created with correct resource
+        mock_tracer_provider_class.assert_called_once()
+        resource_arg = mock_tracer_provider_class.call_args[1]["resource"]
+        assert resource_arg.attributes.get("service.name") == "custom-service"
 
-    def test_configure_tracing_with_default_service_name(self) -> None:
+    @patch("mindbridge.observability.tracing.trace.set_tracer_provider")
+    @patch("mindbridge.observability.tracing.TracerProvider")
+    def test_configure_tracing_with_default_service_name(
+        self, mock_tracer_provider_class: MagicMock, mock_set_tracer_provider: MagicMock
+    ) -> None:
         """Expected use case: Should use default service name when none provided."""
+        mock_tracer_provider = MagicMock()
+        mock_tracer_provider_class.return_value = mock_tracer_provider
+
         configure_tracing()
 
-        tracer_provider = trace.get_tracer_provider()
-        resource = tracer_provider.resource
-        assert resource.attributes.get("service.name") == "mindbridge"
+        # Verify TracerProvider was created with correct resource
+        mock_tracer_provider_class.assert_called_once()
+        resource_arg = mock_tracer_provider_class.call_args[1]["resource"]
+        assert resource_arg.attributes.get("service.name") == "mindbridge"
 
     def test_get_tracer_returns_tracer_instance(self) -> None:
         """Expected use case: get_tracer should return a valid tracer."""
@@ -53,13 +71,21 @@ class TestTracingConfiguration:
 class TestTracingEdgeCases:
     """Test edge cases for tracing configuration."""
 
-    def test_configure_tracing_with_empty_service_name(self) -> None:
+    @patch("mindbridge.observability.tracing.trace.set_tracer_provider")
+    @patch("mindbridge.observability.tracing.TracerProvider")
+    def test_configure_tracing_with_empty_service_name(
+        self, mock_tracer_provider_class: MagicMock, mock_set_tracer_provider: MagicMock
+    ) -> None:
         """Edge case: Empty service name should use default."""
+        mock_tracer_provider = MagicMock()
+        mock_tracer_provider_class.return_value = mock_tracer_provider
+
         configure_tracing(service_name="")
 
-        tracer_provider = trace.get_tracer_provider()
-        resource = tracer_provider.resource
-        assert resource.attributes.get("service.name") == "mindbridge"
+        # Verify TracerProvider was created with correct resource
+        mock_tracer_provider_class.assert_called_once()
+        resource_arg = mock_tracer_provider_class.call_args[1]["resource"]
+        assert resource_arg.attributes.get("service.name") == "mindbridge"
 
     def test_configure_tracing_multiple_calls(self) -> None:
         """Edge case: Multiple configuration calls should not fail."""

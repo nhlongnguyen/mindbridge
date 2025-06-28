@@ -114,16 +114,16 @@ class TestHealthEndpoints:
 
         assert response.status_code == 503
         data = response.json()
-        assert data["status"] == "unhealthy"
-        assert data["checks"]["database"] == "unhealthy"
-        assert data["checks"]["redis"] == "healthy"
+        assert data["detail"]["status"] == "unhealthy"
+        assert data["detail"]["checks"]["database"] == "unhealthy"
+        assert data["detail"]["checks"]["redis"] == "healthy"
 
 
 class TestHealthCheckFunctions:
     """Test cases for health check utility functions."""
 
     @pytest.mark.asyncio
-    @patch("mindbridge.database.connection.get_async_engine")
+    @patch("mindbridge.api.health.get_async_engine")
     async def test_check_database_health_success(
         self, mock_get_engine: MagicMock
     ) -> None:
@@ -132,15 +132,23 @@ class TestHealthCheckFunctions:
 
         mock_engine = MagicMock()
         mock_get_engine.return_value = mock_engine
+
+        # Create async context manager mock for get_session
+        from unittest.mock import AsyncMock
+
         mock_session = MagicMock()
-        mock_engine.get_session.return_value.__aenter__.return_value = mock_session
-        mock_session.execute.return_value = None
+        mock_context = MagicMock()
+        mock_context.__aenter__ = AsyncMock(return_value=mock_session)
+        mock_context.__aexit__ = AsyncMock(return_value=None)
+        mock_engine.get_session.return_value = mock_context
+
+        mock_session.execute = AsyncMock(return_value=None)
 
         result = await check_database_health()
         assert result is True
 
     @pytest.mark.asyncio
-    @patch("mindbridge.database.connection.get_async_engine")
+    @patch("mindbridge.api.health.get_async_engine")
     async def test_check_database_health_failure(
         self, mock_get_engine: MagicMock
     ) -> None:
@@ -156,13 +164,15 @@ class TestHealthCheckFunctions:
     @patch("mindbridge.cache.redis_cache.get_redis_cache")
     async def test_check_redis_health_success(self, mock_get_cache: MagicMock) -> None:
         """Expected use case: Redis health check should return True when healthy."""
+        from unittest.mock import AsyncMock
+
         from mindbridge.api.health import check_redis_health
 
         mock_cache = MagicMock()
         mock_get_cache.return_value = mock_cache
-        mock_cache.connect.return_value = None
-        mock_cache.ping.return_value = True
-        mock_cache.disconnect.return_value = None
+        mock_cache.connect = AsyncMock()
+        mock_cache.ping = AsyncMock(return_value=True)
+        mock_cache.disconnect = AsyncMock()
 
         result = await check_redis_health()
         assert result is True
@@ -217,6 +227,6 @@ class TestHealthCheckEdgeCases:
 
         assert response.status_code == 503
         data = response.json()
-        assert data["status"] == "unhealthy"
-        assert data["checks"]["database"] == "healthy"
-        assert data["checks"]["redis"] == "unhealthy"
+        assert data["detail"]["status"] == "unhealthy"
+        assert data["detail"]["checks"]["database"] == "healthy"
+        assert data["detail"]["checks"]["redis"] == "unhealthy"
