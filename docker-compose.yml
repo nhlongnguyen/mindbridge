@@ -73,10 +73,19 @@ services:
     image: redis:7-alpine
     ports:
       - "6379:6379"
+    command: redis-server /usr/local/etc/redis/redis.conf
     volumes:
       - redis_data:/data
+      - ./config/redis.conf:/usr/local/etc/redis/redis.conf:ro
     networks:
       - mindbridge-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   # Optional: Redis Insight for debugging
   redis-insight:

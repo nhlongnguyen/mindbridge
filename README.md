@@ -37,7 +37,7 @@ graph TB
 
 - **Backend**: FastAPI with async support
 - **Database**: PostgreSQL with pgvector extension for vector operations
-- **Cache/Queue**: Redis for caching and job processing
+- **Cache/Queue**: Redis 7+ for caching and job processing with persistence
 - **Workers**: Celery for background task processing
 - **Authentication**: JWT-based security
 - **Monitoring**: OpenTelemetry with structured logging
@@ -162,6 +162,19 @@ python3 -m poetry show --tree
 # Database Configuration
 DATABASE_URL=postgresql://user:password@localhost:5432/mindbridge
 REDIS_URL=redis://localhost:6379/0
+
+# Redis Configuration
+REDIS_MAX_CONNECTIONS=10
+REDIS_CONNECTION_TIMEOUT=5
+REDIS_SOCKET_TIMEOUT=2
+
+# Celery Configuration
+CELERY_BROKER_URL=redis://localhost:6379/0
+CELERY_RESULT_BACKEND=redis://localhost:6379/1
+CELERY_VISIBILITY_TIMEOUT=3600
+CELERY_WORKER_PREFETCH_MULTIPLIER=4
+CELERY_TASK_SOFT_TIME_LIMIT=300
+CELERY_TASK_TIME_LIMIT=600
 
 # Security
 JWT_SECRET_KEY=your-super-secret-jwt-key
@@ -537,6 +550,57 @@ redis-cli ping
 
 # Monitor Redis activity
 redis-cli monitor
+
+# Check Redis memory usage
+redis-cli info memory
+
+# Check Redis configuration
+redis-cli config get "*"
+
+# Monitor Redis slow queries
+redis-cli slowlog get 10
+
+# Check connected clients
+redis-cli client list
+```
+
+#### Cache and Queue Issues
+```bash
+# Test cache operations
+python3 -c "
+import asyncio
+from mindbridge.cache.redis_cache import get_redis_cache
+
+async def test_cache():
+    cache = get_redis_cache()
+    await cache.connect()
+    print('Cache connected:', await cache.ping())
+    await cache.set('test', 'value')
+    print('Cache get:', await cache.get('test'))
+    await cache.disconnect()
+
+asyncio.run(test_cache())
+"
+
+# Check Celery broker connection
+python3 -c "
+from mindbridge.jobs.celery_config import get_celery_config
+from mindbridge.jobs.celery_app import check_broker_connection
+import asyncio
+
+async def test_broker():
+    config = get_celery_config()
+    connected = await check_broker_connection(config)
+    print('Broker connected:', connected)
+
+asyncio.run(test_broker())
+"
+
+# Monitor Celery queue lengths
+redis-cli -h localhost -p 6379 -n 0 llen celery
+
+# Clear Redis cache (use with caution)
+redis-cli flushdb
 ```
 
 #### Embedding Generation Slow
