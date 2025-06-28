@@ -2,7 +2,7 @@
 
 [![CI/CD Pipeline](https://github.com/user/mindbridge/workflows/CI/badge.svg)](https://github.com/user/mindbridge/actions)
 [![Code Coverage](https://codecov.io/gh/user/mindbridge/branch/main/graph/badge.svg)](https://codecov.io/gh/user/mindbridge)
-[![Python Version](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![Python Version](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 An intelligent documentation and code analysis system that combines vector-based semantic search with graph database relationships to provide comprehensive answers about software tools, libraries, frameworks, and programming languages.
@@ -47,7 +47,7 @@ graph TB
 
 ### Prerequisites
 
-- Python 3.11+
+- Python 3.12+
 - PostgreSQL 15+ with pgvector extension
 - Redis 7+
 - Git
@@ -70,25 +70,88 @@ curl http://localhost:8000/health
 ### Development Setup
 
 ```bash
-# Install Python dependencies
-pip install poetry
-poetry install --with dev,test
+# Install Python dependencies (Poetry is already available)
+python3 -m poetry install
 
 # Install pre-commit hooks
-pre-commit install
+python3 -m poetry run pre-commit install
 
 # Set up environment variables
 cp .env.example .env
 # Edit .env with your configuration
 
 # Initialize database
-poetry run alembic upgrade head
+python3 -m poetry run alembic upgrade head
 
 # Start development server
-poetry run uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
+python3 -m poetry run uvicorn src.mindbridge.main:app --reload --host 0.0.0.0 --port 8000
 
 # Start worker process (in separate terminal)
-poetry run celery -A src.worker.celery_app worker --loglevel=info
+python3 -m poetry run celery -A src.worker.celery_app worker --loglevel=info
+```
+
+### Development Commands Quick Reference
+
+**Code Quality & Linting:**
+```bash
+# Lint and auto-fix issues
+python3 -m poetry run ruff check src/ tests/ --fix
+
+# Format code
+python3 -m poetry run black src/ tests/
+
+# Type checking
+python3 -m poetry run mypy src/
+
+# Complete quality check pipeline
+python3 -m poetry run ruff check src/ tests/ --fix && \
+python3 -m poetry run black src/ tests/ && \
+python3 -m poetry run mypy src/
+```
+
+**Testing:**
+```bash
+# Run all tests with verbose output
+python3 -m poetry run pytest tests/ -v
+
+# Run tests with coverage report
+python3 -m poetry run pytest tests/ --cov=src --cov-report=html
+
+# Run specific test file
+python3 -m poetry run pytest tests/database/test_models.py -v
+
+# Quality gate: Run tests with minimum coverage
+python3 -m poetry run pytest tests/ --cov=src --cov-fail-under=85
+```
+
+**Application Management:**
+```bash
+# Start development server
+python3 -m poetry run uvicorn src.mindbridge.main:app --reload
+
+# Run database migrations
+python3 -m poetry run alembic upgrade head
+
+# Generate new migration
+python3 -m poetry run alembic revision --autogenerate -m "Description"
+
+# Start Celery worker
+python3 -m poetry run celery -A src.worker.celery_app worker --loglevel=info
+```
+
+**Dependency Management:**
+```bash
+# Add new dependency
+python3 -m poetry add package-name
+
+# Add development dependency
+python3 -m poetry add --group dev package-name
+
+# Update all dependencies
+python3 -m poetry update
+
+# Show dependency tree
+python3 -m poetry show --tree
 ```
 
 ## 🔧 Configuration
@@ -138,7 +201,7 @@ brew install postgresql pgvector
 psql -d mindbridge -c "CREATE EXTENSION IF NOT EXISTS vector;"
 
 # Run database migrations
-poetry run alembic upgrade head
+python3 -m poetry run alembic upgrade head
 ```
 
 ## 📚 API Documentation
@@ -212,20 +275,23 @@ The project uses pytest with comprehensive test coverage requirements (85%+).
 
 ```bash
 # Run all tests
-poetry run pytest
+python3 -m poetry run pytest tests/ -v
 
 # Run with coverage report
-poetry run pytest --cov=src --cov-report=html
+python3 -m poetry run pytest tests/ --cov=src --cov-report=html
 
 # Run specific test categories
-poetry run pytest tests/unit/          # Unit tests only
-poetry run pytest tests/integration/   # Integration tests only
+python3 -m poetry run pytest tests/database/ -v      # Database tests
+python3 -m poetry run pytest tests/ -k "integration" -v  # Integration tests only
 
 # Run tests with detailed output
-poetry run pytest -v --tb=short
+python3 -m poetry run pytest tests/ -v --tb=short
 
-# Run tests in parallel
-poetry run pytest -n auto
+# Run specific test file
+python3 -m poetry run pytest tests/database/test_models.py -v
+
+# Run tests matching pattern
+python3 -m poetry run pytest tests/ -k "test_vector" -v
 ```
 
 ### Test Structure
@@ -356,20 +422,20 @@ We follow strict development standards outlined in [CLAUDE.md](./CLAUDE.md).
 
 ```bash
 # Run quality checks
-poetry run ruff check src/ tests/
-poetry run black --check src/ tests/
-poetry run mypy src/
-poetry run pytest --cov=src --cov-fail-under=85
+python3 -m poetry run ruff check src/ tests/ --fix
+python3 -m poetry run black src/ tests/
+python3 -m poetry run mypy src/
+python3 -m poetry run pytest tests/ --cov=src --cov-fail-under=85
 ```
 
 ### Pre-commit Hooks
 
 ```bash
 # Install pre-commit hooks
-pre-commit install
+python3 -m poetry run pre-commit install
 
 # Run hooks manually
-pre-commit run --all-files
+python3 -m poetry run pre-commit run --all-files
 ```
 
 ## 📈 Performance
@@ -403,13 +469,13 @@ pre-commit run --all-files
 
 ```bash
 # Run security scan
-poetry run bandit -r src/
+python3 -m poetry run bandit -r src/
 
-# Check for vulnerabilities
-poetry run safety check
+# Check for vulnerabilities (if safety is installed)
+python3 -m poetry run safety check
 
 # Audit dependencies
-poetry audit
+python3 -m poetry audit
 ```
 
 ## 📋 Roadmap
@@ -488,10 +554,10 @@ export BATCH_SIZE=16  # Reduce if memory constrained
 #### Job Processing Issues
 ```bash
 # Check Celery worker status
-celery -A src.worker.celery_app inspect active
+python3 -m poetry run celery -A src.worker.celery_app inspect active
 
 # Monitor job queue
-celery -A src.worker.celery_app inspect reserved
+python3 -m poetry run celery -A src.worker.celery_app inspect reserved
 
 # Restart workers
 docker-compose restart worker
