@@ -68,7 +68,7 @@ async def check_redis_health() -> bool:
         await cache.connect()
         result = await cache.ping()
         await cache.disconnect()
-        return result
+        return bool(result)
     except Exception:
         logger.exception("Redis health check failed")
         return False

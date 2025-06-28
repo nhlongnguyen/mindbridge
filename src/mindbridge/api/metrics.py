@@ -9,7 +9,7 @@ logger = get_logger(__name__)
 router = APIRouter(tags=["metrics"])
 
 
-@router.get("/metrics")
+@router.get("/metrics", response_class=Response)
 async def get_metrics() -> Response:
     """Prometheus metrics endpoint.
 
