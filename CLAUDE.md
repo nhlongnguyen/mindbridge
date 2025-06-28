@@ -205,10 +205,10 @@ class TestDocumentProcessor:
 # .pre-commit-config.yaml (must be used)
 repos:
   - repo: https://github.com/psf/black
-    rev: 23.12.1
+    rev: 24.3.0
     hooks:
       - id: black
-        language_version: python3.11
+        language_version: python3.12
 
   - repo: https://github.com/charliermarsh/ruff-pre-commit
     rev: v0.1.9

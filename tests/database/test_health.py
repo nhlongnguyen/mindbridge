@@ -231,13 +231,13 @@ class TestDatabaseHealthChecker:
         health_checker = DatabaseHealthChecker(mock_engine)
 
         # Mock all individual checks to return healthy
-        with patch.object(
-            health_checker, "check_basic_connectivity"
-        ) as mock_connectivity, patch.object(
-            health_checker, "check_pgvector_extension"
-        ) as mock_pgvector, patch.object(
-            health_checker, "check_pool_status"
-        ) as mock_pool:
+        with (
+            patch.object(
+                health_checker, "check_basic_connectivity"
+            ) as mock_connectivity,
+            patch.object(health_checker, "check_pgvector_extension") as mock_pgvector,
+            patch.object(health_checker, "check_pool_status") as mock_pool,
+        ):
             mock_connectivity.return_value = {
                 "status": "healthy",
                 "checks": {"connectivity": {"status": "healthy", "message": "OK"}},
@@ -271,13 +271,13 @@ class TestDatabaseHealthChecker:
         health_checker = DatabaseHealthChecker(mock_engine)
 
         # Mock checks with one unhealthy
-        with patch.object(
-            health_checker, "check_basic_connectivity"
-        ) as mock_connectivity, patch.object(
-            health_checker, "check_pgvector_extension"
-        ) as mock_pgvector, patch.object(
-            health_checker, "check_pool_status"
-        ) as mock_pool:
+        with (
+            patch.object(
+                health_checker, "check_basic_connectivity"
+            ) as mock_connectivity,
+            patch.object(health_checker, "check_pgvector_extension") as mock_pgvector,
+            patch.object(health_checker, "check_pool_status") as mock_pool,
+        ):
             mock_connectivity.return_value = {
                 "status": "healthy",
                 "checks": {"connectivity": {"status": "healthy", "message": "OK"}},
@@ -313,13 +313,13 @@ class TestDatabaseHealthChecker:
         health_checker = DatabaseHealthChecker(mock_engine)
 
         # Mock checks with multiple unhealthy
-        with patch.object(
-            health_checker, "check_basic_connectivity"
-        ) as mock_connectivity, patch.object(
-            health_checker, "check_pgvector_extension"
-        ) as mock_pgvector, patch.object(
-            health_checker, "check_pool_status"
-        ) as mock_pool:
+        with (
+            patch.object(
+                health_checker, "check_basic_connectivity"
+            ) as mock_connectivity,
+            patch.object(health_checker, "check_pgvector_extension") as mock_pgvector,
+            patch.object(health_checker, "check_pool_status") as mock_pool,
+        ):
             mock_connectivity.return_value = {
                 "status": "unhealthy",
                 "checks": {

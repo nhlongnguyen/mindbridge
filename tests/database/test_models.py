@@ -1,6 +1,5 @@
 """Tests for database models."""
 
-
 import pytest
 from mindbridge.database.models import Base, VectorDocument
 

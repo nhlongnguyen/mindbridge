@@ -94,18 +94,12 @@ python3 -m poetry run celery -A src.worker.celery_app worker --loglevel=info
 
 **Code Quality & Linting:**
 ```bash
-# Lint and auto-fix issues
+# Run all pre-commit hooks (recommended)
+python3 -m poetry run pre-commit run --all-files
+
+# Individual commands (if needed)
 python3 -m poetry run ruff check src/ tests/ --fix
-
-# Format code
 python3 -m poetry run black src/ tests/
-
-# Type checking
-python3 -m poetry run mypy src/
-
-# Complete quality check pipeline
-python3 -m poetry run ruff check src/ tests/ --fix && \
-python3 -m poetry run black src/ tests/ && \
 python3 -m poetry run mypy src/
 ```
 
@@ -435,10 +429,8 @@ We follow strict development standards outlined in [CLAUDE.md](./CLAUDE.md).
 
 ```bash
 # Run quality checks
-python3 -m poetry run ruff check src/ tests/ --fix
-python3 -m poetry run black src/ tests/
-python3 -m poetry run mypy src/
 python3 -m poetry run pytest tests/ --cov=src --cov-fail-under=85
+python3 -m poetry run pre-commit run --all-files
 ```
 
 ### Pre-commit Hooks
