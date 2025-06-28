@@ -144,7 +144,7 @@ python3 -m poetry run celery -A src.worker.celery_app worker --loglevel=info
 # Add new dependency
 python3 -m poetry add package-name
 
-# Add development dependency  
+# Add development dependency
 python3 -m poetry add --group dev package-name
 
 # Update all dependencies

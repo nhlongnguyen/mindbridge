@@ -116,9 +116,7 @@ def get_async_engine() -> DatabaseEngine:
     if _database_engine is None:
         database_url = os.getenv("DATABASE_URL")
         if not database_url:
-            raise RuntimeError(
-                "DATABASE_URL environment variable is required"
-            )
+            raise RuntimeError("DATABASE_URL environment variable is required")
 
         # Parse echo setting from environment
         echo = os.getenv("DB_ECHO", "false").lower() == "true"
@@ -142,4 +140,3 @@ async def close_database_engine() -> None:
     if _database_engine is not None:
         await _database_engine.close()
         _database_engine = None
-

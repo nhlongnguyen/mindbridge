@@ -1,10 +1,9 @@
 """Database health checking functionality."""
 
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import bindparam, literal_column, select, text
-from sqlalchemy.sql import Select
+from sqlalchemy import select, text
 from sqlalchemy.exc import SQLAlchemyError
 
 from .connection import DatabaseEngine
@@ -30,7 +29,7 @@ class DatabaseHealthChecker:
         result: dict[str, Any] = {
             "status": "healthy",
             "timestamp": datetime.now(UTC).isoformat(),
-            "checks": {}
+            "checks": {},
         }
 
         try:
@@ -39,19 +38,19 @@ class DatabaseHealthChecker:
                 await session.execute(select(1))
                 result["checks"]["connectivity"] = {
                     "status": "healthy",
-                    "message": "Database connection successful"
+                    "message": "Database connection successful",
                 }
         except SQLAlchemyError as e:
             result["status"] = "unhealthy"
             result["checks"]["connectivity"] = {
                 "status": "unhealthy",
-                "message": f"Database connection failed: {str(e)}"
+                "message": f"Database connection failed: {str(e)}",
             }
         except Exception as e:
             result["status"] = "unhealthy"
             result["checks"]["connectivity"] = {
                 "status": "unhealthy",
-                "message": f"Unexpected error: {str(e)}"
+                "message": f"Unexpected error: {str(e)}",
             }
 
         return result
@@ -65,7 +64,7 @@ class DatabaseHealthChecker:
         result: dict[str, Any] = {
             "status": "healthy",
             "timestamp": datetime.now(UTC).isoformat(),
-            "checks": {}
+            "checks": {},
         }
 
         try:
@@ -74,13 +73,15 @@ class DatabaseHealthChecker:
                 extension_query = text(
                     "SELECT extname, extversion FROM pg_extension WHERE extname = :ext_name"
                 )
-                extension_result = await session.execute(extension_query, {"ext_name": "vector"})
+                extension_result = await session.execute(
+                    extension_query, {"ext_name": "vector"}
+                )
                 extension_row = extension_result.fetchone()
 
                 if extension_row:
                     result["checks"]["pgvector_extension"] = {
                         "status": "healthy",
-                        "message": f"pgvector extension version {extension_row.extversion} is installed"
+                        "message": f"pgvector extension version {extension_row.extversion} is installed",
                     }
 
                     # Test vector operations with static vectors (safe text query)
@@ -92,26 +93,26 @@ class DatabaseHealthChecker:
 
                     result["checks"]["vector_operations"] = {
                         "status": "healthy",
-                        "message": f"Vector distance calculation successful: {distance}"
+                        "message": f"Vector distance calculation successful: {distance}",
                     }
                 else:
                     result["status"] = "unhealthy"
                     result["checks"]["pgvector_extension"] = {
                         "status": "unhealthy",
-                        "message": "pgvector extension is not installed"
+                        "message": "pgvector extension is not installed",
                     }
 
         except SQLAlchemyError as e:
             result["status"] = "unhealthy"
             result["checks"]["pgvector_extension"] = {
                 "status": "unhealthy",
-                "message": f"pgvector check failed: {str(e)}"
+                "message": f"pgvector check failed: {str(e)}",
             }
         except Exception as e:
             result["status"] = "unhealthy"
             result["checks"]["pgvector_extension"] = {
                 "status": "unhealthy",
-                "message": f"Unexpected error: {str(e)}"
+                "message": f"Unexpected error: {str(e)}",
             }
 
         return result
@@ -125,17 +126,17 @@ class DatabaseHealthChecker:
         result: dict[str, Any] = {
             "status": "healthy",
             "timestamp": datetime.now(UTC).isoformat(),
-            "checks": {}
+            "checks": {},
         }
 
         try:
             pool = self._database_engine.engine.pool
 
             # Get pool statistics using getattr for safer access
-            pool_size = getattr(pool, 'size', lambda: 0)()
-            checked_in = getattr(pool, 'checkedin', lambda: 0)()
-            checked_out = getattr(pool, 'checkedout', lambda: 0)()
-            overflow = getattr(pool, 'overflow', lambda: 0)()
+            pool_size = getattr(pool, "size", lambda: 0)()
+            checked_in = getattr(pool, "checkedin", lambda: 0)()
+            checked_out = getattr(pool, "checkedout", lambda: 0)()
+            overflow = getattr(pool, "overflow", lambda: 0)()
 
             result["checks"]["connection_pool"] = {
                 "status": "healthy",
@@ -143,14 +144,14 @@ class DatabaseHealthChecker:
                 "checked_in": checked_in,
                 "checked_out": checked_out,
                 "overflow": overflow,
-                "total_connections": pool_size + overflow
+                "total_connections": pool_size + overflow,
             }
 
         except Exception as e:
             result["status"] = "unhealthy"
             result["checks"]["connection_pool"] = {
                 "status": "unhealthy",
-                "message": f"Pool status check failed: {str(e)}"
+                "message": f"Pool status check failed: {str(e)}",
             }
 
         return result
@@ -168,9 +169,11 @@ class DatabaseHealthChecker:
 
         # Combine results
         overall_status = "healthy"
-        if (connectivity_check["status"] != "healthy" or
-            pgvector_check["status"] != "healthy" or
-            pool_check["status"] != "healthy"):
+        if (
+            connectivity_check["status"] != "healthy"
+            or pgvector_check["status"] != "healthy"
+            or pool_check["status"] != "healthy"
+        ):
             overall_status = "unhealthy"
 
         return {
@@ -179,7 +182,6 @@ class DatabaseHealthChecker:
             "checks": {
                 **connectivity_check["checks"],
                 **pgvector_check["checks"],
-                **pool_check["checks"]
-            }
+                **pool_check["checks"],
+            },
         }
-

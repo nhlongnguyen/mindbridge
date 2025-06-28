@@ -3,10 +3,9 @@
 from unittest.mock import AsyncMock, Mock
 
 import pytest
+from mindbridge.database.models import VectorDocument
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from mindbridge.database.models import VectorDocument
 
 
 class TestVectorSimilarityOperations:
@@ -80,13 +79,13 @@ class TestVectorSimilarityOperations:
             id=1,
             content="Document 1",
             title="Title 1",
-            embedding=[0.1, 0.2, 0.3] * 512  # 1536 dimensions
+            embedding=[0.1, 0.2, 0.3] * 512,  # 1536 dimensions
         )
         doc2 = VectorDocument(
             id=2,
             content="Document 2",
             title="Title 2",
-            embedding=[0.4, 0.5, 0.6] * 512  # 1536 dimensions
+            embedding=[0.4, 0.5, 0.6] * 512,  # 1536 dimensions
         )
 
         mock_result = Mock()
@@ -97,15 +96,16 @@ class TestVectorSimilarityOperations:
 
         # Act
         # This would be the actual query in implementation
-        query = text("""
+        query = text(
+            """
             SELECT * FROM vector_documents
             ORDER BY embedding <-> :query_vector
             LIMIT :limit
-        """)
-        result = await mock_session.execute(query, {
-            "query_vector": query_vector,
-            "limit": 5
-        })
+        """
+        )
+        result = await mock_session.execute(
+            query, {"query_vector": query_vector, "limit": 5}
+        )
         documents = result.fetchall()
 
         # Assert
@@ -125,7 +125,7 @@ class TestVectorSimilarityOperations:
             content="Python code document",
             title="Python Guide",
             embedding=[0.1, 0.2, 0.3] * 512,  # 1536 dimensions
-            document_type="code"
+            document_type="code",
         )
 
         mock_result = Mock()
@@ -135,17 +135,17 @@ class TestVectorSimilarityOperations:
         query_vector = [0.2, 0.3, 0.4] * 512  # 1536 dimensions
 
         # Act
-        query = text("""
+        query = text(
+            """
             SELECT * FROM vector_documents
             WHERE document_type = :doc_type
             ORDER BY embedding <-> :query_vector
             LIMIT :limit
-        """)
-        result = await mock_session.execute(query, {
-            "query_vector": query_vector,
-            "doc_type": "code",
-            "limit": 5
-        })
+        """
+        )
+        result = await mock_session.execute(
+            query, {"query_vector": query_vector, "doc_type": "code", "limit": 5}
+        )
         documents = result.fetchall()
 
         # Assert
@@ -165,15 +165,16 @@ class TestVectorSimilarityOperations:
         query_vector = [0.9, 0.9, 0.9] * 512  # 1536 dimensions
 
         # Act
-        query = text("""
+        query = text(
+            """
             SELECT * FROM vector_documents
             ORDER BY embedding <-> :query_vector
             LIMIT :limit
-        """)
-        result = await mock_session.execute(query, {
-            "query_vector": query_vector,
-            "limit": 5
-        })
+        """
+        )
+        result = await mock_session.execute(
+            query, {"query_vector": query_vector, "limit": 5}
+        )
         documents = result.fetchall()
 
         # Assert
@@ -189,7 +190,7 @@ class TestVectorSimilarityOperations:
         doc = VectorDocument(
             id=1,
             content="Close document",
-            embedding=[0.1, 0.2, 0.3] * 512  # 1536 dimensions
+            embedding=[0.1, 0.2, 0.3] * 512,  # 1536 dimensions
         )
 
         mock_result = Mock()
@@ -200,17 +201,22 @@ class TestVectorSimilarityOperations:
         distance_threshold = 0.5
 
         # Act
-        query = text("""
+        query = text(
+            """
             SELECT * FROM vector_documents
             WHERE embedding <-> :query_vector < :threshold
             ORDER BY embedding <-> :query_vector
             LIMIT :limit
-        """)
-        result = await mock_session.execute(query, {
-            "query_vector": query_vector,
-            "threshold": distance_threshold,
-            "limit": 10
-        })
+        """
+        )
+        result = await mock_session.execute(
+            query,
+            {
+                "query_vector": query_vector,
+                "threshold": distance_threshold,
+                "limit": 10,
+            },
+        )
         documents = result.fetchall()
 
         # Assert
@@ -225,17 +231,15 @@ class TestVectorSimilarityOperations:
 
         # Act & Assert - Correct dimensions
         doc_correct = VectorDocument(
-            content="Test document",
-            embedding=correct_embedding
+            content="Test document", embedding=correct_embedding
         )
         assert len(doc_correct.embedding) == 1536
 
         # Act & Assert - Incorrect dimensions should raise validation error
-        with pytest.raises(ValueError, match="Embedding must be exactly 1536 dimensions"):
-            VectorDocument(
-                content="Test document",
-                embedding=incorrect_embedding
-            )
+        with pytest.raises(
+            ValueError, match="Embedding must be exactly 1536 dimensions"
+        ):
+            VectorDocument(content="Test document", embedding=incorrect_embedding)
 
     @pytest.mark.asyncio
     async def test_batch_vector_insert_success(self) -> None:
@@ -247,7 +251,7 @@ class TestVectorSimilarityOperations:
             VectorDocument(
                 content=f"Document {i}",
                 title=f"Title {i}",
-                embedding=[0.1 * i, 0.2 * i, 0.3 * i] * 512  # 1536 dimensions
+                embedding=[0.1 * i, 0.2 * i, 0.3 * i] * 512,  # 1536 dimensions
             )
             for i in range(1, 4)
         ]
@@ -270,7 +274,7 @@ class TestVectorSimilarityOperations:
             id=123,
             content="Retrieved document",
             title="Retrieved Title",
-            embedding=[0.1] * 1536
+            embedding=[0.1] * 1536,
         )
 
         mock_result = Mock()
@@ -279,7 +283,9 @@ class TestVectorSimilarityOperations:
 
         # Act
         # This simulates: SELECT * FROM vector_documents WHERE id = 123
-        result = await mock_session.execute(text("SELECT * FROM vector_documents WHERE id = :id"), {"id": 123})
+        result = await mock_session.execute(
+            text("SELECT * FROM vector_documents WHERE id = :id"), {"id": 123}
+        )
         retrieved_doc = result.scalar_one_or_none()
 
         # Assert
@@ -296,9 +302,7 @@ class TestVectorSimilarityOperations:
 
         # Simulate existing document
         doc = VectorDocument(
-            id=456,
-            content="Document to update",
-            embedding=[0.1] * 1536
+            id=456, content="Document to update", embedding=[0.1] * 1536
         )
 
         new_embedding = [0.5] * 1536
@@ -310,4 +314,3 @@ class TestVectorSimilarityOperations:
         # Assert
         assert doc.embedding == new_embedding
         mock_session.commit.assert_called_once()
-

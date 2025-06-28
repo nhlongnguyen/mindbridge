@@ -3,11 +3,10 @@
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from mindbridge.database.connection import DatabaseEngine
 from mindbridge.database.health import DatabaseHealthChecker
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class TestDatabaseHealthChecker:
@@ -42,7 +41,10 @@ class TestDatabaseHealthChecker:
         assert result["status"] == "healthy"
         assert "timestamp" in result
         assert result["checks"]["connectivity"]["status"] == "healthy"
-        assert "Database connection successful" in result["checks"]["connectivity"]["message"]
+        assert (
+            "Database connection successful"
+            in result["checks"]["connectivity"]["message"]
+        )
         mock_session.execute.assert_called_once()
 
     @pytest.mark.asyncio
@@ -64,7 +66,9 @@ class TestDatabaseHealthChecker:
         # Assert
         assert result["status"] == "unhealthy"
         assert result["checks"]["connectivity"]["status"] == "unhealthy"
-        assert "Database connection failed" in result["checks"]["connectivity"]["message"]
+        assert (
+            "Database connection failed" in result["checks"]["connectivity"]["message"]
+        )
         assert "Connection failed" in result["checks"]["connectivity"]["message"]
 
     @pytest.mark.asyncio
@@ -166,7 +170,9 @@ class TestDatabaseHealthChecker:
         # Assert
         assert result["status"] == "unhealthy"
         assert result["checks"]["pgvector_extension"]["status"] == "unhealthy"
-        assert "pgvector check failed" in result["checks"]["pgvector_extension"]["message"]
+        assert (
+            "pgvector check failed" in result["checks"]["pgvector_extension"]["message"]
+        )
 
     @pytest.mark.asyncio
     async def test_check_pool_status_success(self) -> None:
@@ -213,7 +219,9 @@ class TestDatabaseHealthChecker:
         # Assert
         assert result["status"] == "unhealthy"
         assert result["checks"]["connection_pool"]["status"] == "unhealthy"
-        assert "Pool status check failed" in result["checks"]["connection_pool"]["message"]
+        assert (
+            "Pool status check failed" in result["checks"]["connection_pool"]["message"]
+        )
 
     @pytest.mark.asyncio
     async def test_comprehensive_health_check_all_healthy(self) -> None:
@@ -223,21 +231,26 @@ class TestDatabaseHealthChecker:
         health_checker = DatabaseHealthChecker(mock_engine)
 
         # Mock all individual checks to return healthy
-        with patch.object(health_checker, 'check_basic_connectivity') as mock_connectivity, \
-             patch.object(health_checker, 'check_pgvector_extension') as mock_pgvector, \
-             patch.object(health_checker, 'check_pool_status') as mock_pool:
-
+        with patch.object(
+            health_checker, "check_basic_connectivity"
+        ) as mock_connectivity, patch.object(
+            health_checker, "check_pgvector_extension"
+        ) as mock_pgvector, patch.object(
+            health_checker, "check_pool_status"
+        ) as mock_pool:
             mock_connectivity.return_value = {
                 "status": "healthy",
-                "checks": {"connectivity": {"status": "healthy", "message": "OK"}}
+                "checks": {"connectivity": {"status": "healthy", "message": "OK"}},
             }
             mock_pgvector.return_value = {
                 "status": "healthy",
-                "checks": {"pgvector_extension": {"status": "healthy", "message": "OK"}}
+                "checks": {
+                    "pgvector_extension": {"status": "healthy", "message": "OK"}
+                },
             }
             mock_pool.return_value = {
                 "status": "healthy",
-                "checks": {"connection_pool": {"status": "healthy", "pool_size": 10}}
+                "checks": {"connection_pool": {"status": "healthy", "pool_size": 10}},
             }
 
             # Act
@@ -258,21 +271,29 @@ class TestDatabaseHealthChecker:
         health_checker = DatabaseHealthChecker(mock_engine)
 
         # Mock checks with one unhealthy
-        with patch.object(health_checker, 'check_basic_connectivity') as mock_connectivity, \
-             patch.object(health_checker, 'check_pgvector_extension') as mock_pgvector, \
-             patch.object(health_checker, 'check_pool_status') as mock_pool:
-
+        with patch.object(
+            health_checker, "check_basic_connectivity"
+        ) as mock_connectivity, patch.object(
+            health_checker, "check_pgvector_extension"
+        ) as mock_pgvector, patch.object(
+            health_checker, "check_pool_status"
+        ) as mock_pool:
             mock_connectivity.return_value = {
                 "status": "healthy",
-                "checks": {"connectivity": {"status": "healthy", "message": "OK"}}
+                "checks": {"connectivity": {"status": "healthy", "message": "OK"}},
             }
             mock_pgvector.return_value = {
                 "status": "unhealthy",  # This one is unhealthy
-                "checks": {"pgvector_extension": {"status": "unhealthy", "message": "Extension missing"}}
+                "checks": {
+                    "pgvector_extension": {
+                        "status": "unhealthy",
+                        "message": "Extension missing",
+                    }
+                },
             }
             mock_pool.return_value = {
                 "status": "healthy",
-                "checks": {"connection_pool": {"status": "healthy", "pool_size": 10}}
+                "checks": {"connection_pool": {"status": "healthy", "pool_size": 10}},
             }
 
             # Act
@@ -292,21 +313,36 @@ class TestDatabaseHealthChecker:
         health_checker = DatabaseHealthChecker(mock_engine)
 
         # Mock checks with multiple unhealthy
-        with patch.object(health_checker, 'check_basic_connectivity') as mock_connectivity, \
-             patch.object(health_checker, 'check_pgvector_extension') as mock_pgvector, \
-             patch.object(health_checker, 'check_pool_status') as mock_pool:
-
+        with patch.object(
+            health_checker, "check_basic_connectivity"
+        ) as mock_connectivity, patch.object(
+            health_checker, "check_pgvector_extension"
+        ) as mock_pgvector, patch.object(
+            health_checker, "check_pool_status"
+        ) as mock_pool:
             mock_connectivity.return_value = {
                 "status": "unhealthy",
-                "checks": {"connectivity": {"status": "unhealthy", "message": "Connection failed"}}
+                "checks": {
+                    "connectivity": {
+                        "status": "unhealthy",
+                        "message": "Connection failed",
+                    }
+                },
             }
             mock_pgvector.return_value = {
                 "status": "unhealthy",
-                "checks": {"pgvector_extension": {"status": "unhealthy", "message": "Extension missing"}}
+                "checks": {
+                    "pgvector_extension": {
+                        "status": "unhealthy",
+                        "message": "Extension missing",
+                    }
+                },
             }
             mock_pool.return_value = {
                 "status": "unhealthy",
-                "checks": {"connection_pool": {"status": "unhealthy", "message": "Pool error"}}
+                "checks": {
+                    "connection_pool": {"status": "unhealthy", "message": "Pool error"}
+                },
             }
 
             # Act
@@ -317,4 +353,3 @@ class TestDatabaseHealthChecker:
         assert result["checks"]["connectivity"]["status"] == "unhealthy"
         assert result["checks"]["pgvector_extension"]["status"] == "unhealthy"
         assert result["checks"]["connection_pool"]["status"] == "unhealthy"
-

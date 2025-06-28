@@ -1,6 +1,7 @@
 """Database models with pgvector support."""
 
 from datetime import datetime
+from typing import Any
 
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import DateTime, String, Text, func
@@ -34,19 +35,17 @@ class VectorDocument(Base):
 
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        server_default=func.now(),
-        nullable=False
+        DateTime(timezone=True), server_default=func.now(), nullable=False
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
         onupdate=func.now(),
-        nullable=False
+        nullable=False,
     )
 
-    @validates("embedding")
-    def _validate_embedding(self, key: str, value: list[float]) -> list[float]:
+    @validates("embedding")  # type: ignore[misc]
+    def _validate_embedding(self, key: str, value: Any) -> list[float]:
         """Validate embedding field.
 
         Args:
@@ -62,7 +61,9 @@ class VectorDocument(Base):
         if not isinstance(value, list):
             raise ValueError("Embedding must be a list of floats")
         if len(value) != 1536:
-            raise ValueError(f"Embedding must be exactly 1536 dimensions, got {len(value)}")
+            raise ValueError(
+                f"Embedding must be exactly 1536 dimensions, got {len(value)}"
+            )
         if not all(isinstance(x, int | float) for x in value):
             raise ValueError("All embedding values must be numbers")
         return value
@@ -70,4 +71,3 @@ class VectorDocument(Base):
     def __repr__(self) -> str:
         """String representation of VectorDocument."""
         return f"<VectorDocument(id={self.id}, title='{self.title}')>"
-

@@ -36,19 +36,19 @@ END$$;
 -- IVFFlat index for L2 distance (euclidean) - good for general use
 -- Lists parameter should be approximately sqrt(total_rows)
 -- For 100k+ vectors, use 100-1000 lists
-CREATE INDEX IF NOT EXISTS vec_docs_embedding_ivfflat_l2_idx 
-ON vector_documents USING ivfflat (embedding vector_l2_ops) 
+CREATE INDEX IF NOT EXISTS vec_docs_embedding_ivfflat_l2_idx
+ON vector_documents USING ivfflat (embedding vector_l2_ops)
 WITH (lists = 100);
 
 -- HNSW index for cosine similarity - better for high-dimensional data
 -- m = 16 is good default, ef_construction = 64 balances build time vs quality
-CREATE INDEX IF NOT EXISTS vec_docs_embedding_hnsw_cosine_idx 
-ON vector_documents USING hnsw (embedding vector_cosine_ops) 
+CREATE INDEX IF NOT EXISTS vec_docs_embedding_hnsw_cosine_idx
+ON vector_documents USING hnsw (embedding vector_cosine_ops)
 WITH (m = 16, ef_construction = 64);
 
 -- IVFFlat index for inner product similarity
-CREATE INDEX IF NOT EXISTS vec_docs_embedding_ivfflat_ip_idx 
-ON vector_documents USING ivfflat (embedding vector_ip_ops) 
+CREATE INDEX IF NOT EXISTS vec_docs_embedding_ivfflat_ip_idx
+ON vector_documents USING ivfflat (embedding vector_ip_ops)
 WITH (lists = 100);
 
 -- Update table statistics for query planner optimization

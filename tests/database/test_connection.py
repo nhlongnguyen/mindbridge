@@ -1,17 +1,15 @@
 """Tests for database connection management."""
 
 import os
-from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
-
 from mindbridge.database.connection import (
     DatabaseEngine,
     close_database_engine,
     get_async_engine,
 )
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
 
 class TestDatabaseEngine:
@@ -26,9 +24,7 @@ class TestDatabaseEngine:
 
         # Act
         engine = DatabaseEngine(
-            database_url=database_url,
-            pool_size=pool_size,
-            max_overflow=max_overflow
+            database_url=database_url, pool_size=pool_size, max_overflow=max_overflow
         )
 
         # Assert
@@ -43,30 +39,38 @@ class TestDatabaseEngine:
     def test_database_engine_custom_configuration(self) -> None:
         """Expected use case: Initialize DatabaseEngine with custom settings."""
         # Arrange
-        config = {
-            "database_url": "postgresql+asyncpg://user:pass@localhost/test",
-            "pool_size": 20,
-            "max_overflow": 30,
-            "pool_timeout": 60,
-            "pool_recycle": 7200,
-            "pool_pre_ping": False,
-            "echo": True
-        }
+        database_url = "postgresql+asyncpg://user:pass@localhost/test"
+        pool_size = 20
+        max_overflow = 30
+        pool_timeout = 60
+        pool_recycle = 7200
+        pool_pre_ping = False
+        echo = True
 
         # Act
-        engine = DatabaseEngine(**config)
+        engine = DatabaseEngine(
+            database_url=database_url,
+            pool_size=pool_size,
+            max_overflow=max_overflow,
+            pool_timeout=pool_timeout,
+            pool_recycle=pool_recycle,
+            pool_pre_ping=pool_pre_ping,
+            echo=echo,
+        )
 
         # Assert
-        assert engine._database_url == config["database_url"]
-        assert engine._pool_size == config["pool_size"]
-        assert engine._max_overflow == config["max_overflow"]
-        assert engine._pool_timeout == config["pool_timeout"]
-        assert engine._pool_recycle == config["pool_recycle"]
-        assert engine._pool_pre_ping == config["pool_pre_ping"]
-        assert engine._echo == config["echo"]
+        assert engine._database_url == database_url
+        assert engine._pool_size == pool_size
+        assert engine._max_overflow == max_overflow
+        assert engine._pool_timeout == pool_timeout
+        assert engine._pool_recycle == pool_recycle
+        assert engine._pool_pre_ping == pool_pre_ping
+        assert engine._echo == echo
 
-    @patch('mindbridge.database.connection.create_async_engine')
-    def test_engine_property_lazy_initialization(self, mock_create_engine: Mock) -> None:
+    @patch("mindbridge.database.connection.create_async_engine")
+    def test_engine_property_lazy_initialization(
+        self, mock_create_engine: Mock
+    ) -> None:
         """Expected use case: Engine property should create engine lazily."""
         # Arrange
         mock_engine = Mock(spec=AsyncEngine)
@@ -83,9 +87,11 @@ class TestDatabaseEngine:
         assert engine2 is mock_engine
         assert mock_create_engine.call_count == 1  # Only called once
 
-    @patch('mindbridge.database.connection.async_sessionmaker')
-    @patch('mindbridge.database.connection.create_async_engine')
-    def test_session_factory_property(self, mock_create_engine: Mock, mock_sessionmaker: Mock) -> None:
+    @patch("mindbridge.database.connection.async_sessionmaker")
+    @patch("mindbridge.database.connection.create_async_engine")
+    def test_session_factory_property(
+        self, mock_create_engine: Mock, mock_sessionmaker: Mock
+    ) -> None:
         """Expected use case: Session factory property should create factory lazily."""
         # Arrange
         mock_engine = Mock(spec=AsyncEngine)
@@ -105,18 +111,20 @@ class TestDatabaseEngine:
         assert mock_sessionmaker.call_count == 1  # Only called once
 
     @pytest.mark.asyncio
-    @patch('mindbridge.database.connection.async_sessionmaker')
-    @patch('mindbridge.database.connection.create_async_engine')
-    async def test_get_session_success(self, mock_create_engine: Mock, mock_sessionmaker: Mock) -> None:
+    @patch("mindbridge.database.connection.async_sessionmaker")
+    @patch("mindbridge.database.connection.create_async_engine")
+    async def test_get_session_success(
+        self, mock_create_engine: Mock, mock_sessionmaker: Mock
+    ) -> None:
         """Expected use case: Get session should yield working session."""
         # Arrange
         mock_session = AsyncMock(spec=AsyncSession)
-        
+
         # Create a proper async context manager mock
         mock_session_context = AsyncMock()
         mock_session_context.__aenter__ = AsyncMock(return_value=mock_session)
         mock_session_context.__aexit__ = AsyncMock(return_value=None)
-        
+
         mock_factory = Mock()
         mock_factory.return_value = mock_session_context
 
@@ -131,18 +139,20 @@ class TestDatabaseEngine:
             assert session is mock_session
 
     @pytest.mark.asyncio
-    @patch('mindbridge.database.connection.async_sessionmaker')
-    @patch('mindbridge.database.connection.create_async_engine')
-    async def test_get_session_rollback_on_exception(self, mock_create_engine: Mock, mock_sessionmaker: Mock) -> None:
+    @patch("mindbridge.database.connection.async_sessionmaker")
+    @patch("mindbridge.database.connection.create_async_engine")
+    async def test_get_session_rollback_on_exception(
+        self, mock_create_engine: Mock, mock_sessionmaker: Mock
+    ) -> None:
         """Failure case: Session should rollback on exception."""
         # Arrange
         mock_session = AsyncMock(spec=AsyncSession)
-        
+
         # Create a proper async context manager mock
         mock_session_context = AsyncMock()
         mock_session_context.__aenter__ = AsyncMock(return_value=mock_session)
         mock_session_context.__aexit__ = AsyncMock(return_value=None)
-        
+
         mock_factory = Mock()
         mock_factory.return_value = mock_session_context
 
@@ -160,7 +170,7 @@ class TestDatabaseEngine:
         mock_session.rollback.assert_called_once()
 
     @pytest.mark.asyncio
-    @patch('mindbridge.database.connection.create_async_engine')
+    @patch("mindbridge.database.connection.create_async_engine")
     async def test_close_engine(self, mock_create_engine: Mock) -> None:
         """Expected use case: Close should dispose engine and reset state."""
         # Arrange
@@ -191,8 +201,10 @@ class TestDatabaseEngine:
 class TestGlobalEngineManagement:
     """Test cases for global engine management functions."""
 
-    @patch.dict(os.environ, {"DATABASE_URL": "postgresql+asyncpg://user:pass@localhost/test"})
-    @patch('mindbridge.database.connection.DatabaseEngine')
+    @patch.dict(
+        os.environ, {"DATABASE_URL": "postgresql+asyncpg://user:pass@localhost/test"}
+    )
+    @patch("mindbridge.database.connection.DatabaseEngine")
     def test_get_async_engine_success(self, mock_db_engine_class: Mock) -> None:
         """Expected use case: Get async engine with environment configuration."""
         # Arrange
@@ -206,21 +218,26 @@ class TestGlobalEngineManagement:
         assert engine is mock_engine_instance
         mock_db_engine_class.assert_called_once()
 
-    @patch('mindbridge.database.connection._database_engine', None)
+    @patch("mindbridge.database.connection._database_engine", None)
     def test_get_async_engine_missing_url_fails(self) -> None:
         """Failure case: Get async engine without DATABASE_URL should fail."""
         # Arrange
-        with patch.dict(os.environ, {}, clear=True), pytest.raises(RuntimeError, match="DATABASE_URL environment variable is required"):
+        with patch.dict(os.environ, {}, clear=True), pytest.raises(
+            RuntimeError, match="DATABASE_URL environment variable is required"
+        ):
             get_async_engine()
 
-    @patch.dict(os.environ, {
-        "DATABASE_URL": "postgresql+asyncpg://user:pass@localhost/test",
-        "DB_POOL_SIZE": "15",
-        "DB_MAX_OVERFLOW": "25",
-        "DB_ECHO": "true"
-    })
-    @patch('mindbridge.database.connection._database_engine', None)
-    @patch('mindbridge.database.connection.DatabaseEngine')
+    @patch.dict(
+        os.environ,
+        {
+            "DATABASE_URL": "postgresql+asyncpg://user:pass@localhost/test",
+            "DB_POOL_SIZE": "15",
+            "DB_MAX_OVERFLOW": "25",
+            "DB_ECHO": "true",
+        },
+    )
+    @patch("mindbridge.database.connection._database_engine", None)
+    @patch("mindbridge.database.connection.DatabaseEngine")
     def test_get_async_engine_with_env_config(self, mock_db_engine_class: Mock) -> None:
         """Expected use case: Get async engine with environment variables."""
         # Arrange
@@ -238,10 +255,10 @@ class TestGlobalEngineManagement:
             pool_timeout=30,
             pool_recycle=3600,
             pool_pre_ping=True,
-            echo=True
+            echo=True,
         )
 
-    @patch('mindbridge.database.connection._database_engine')
+    @patch("mindbridge.database.connection._database_engine")
     @pytest.mark.asyncio
     async def test_close_database_engine_success(self, mock_engine: Mock) -> None:
         """Expected use case: Close global database engine."""
@@ -254,14 +271,16 @@ class TestGlobalEngineManagement:
         # Assert
         mock_engine.close.assert_called_once()
 
-    @patch('mindbridge.database.connection._database_engine', None)
+    @patch("mindbridge.database.connection._database_engine", None)
     @pytest.mark.asyncio
     async def test_close_database_engine_when_none(self) -> None:
         """Edge case: Close database engine when not initialized."""
         # Act & Assert (should not raise)
         await close_database_engine()
 
-    @patch.dict(os.environ, {"DATABASE_URL": "postgresql+asyncpg://user:pass@localhost/test"})
+    @patch.dict(
+        os.environ, {"DATABASE_URL": "postgresql+asyncpg://user:pass@localhost/test"}
+    )
     def test_get_async_engine_singleton_behavior(self) -> None:
         """Expected use case: get_async_engine should return same instance."""
         # Act
@@ -270,4 +289,3 @@ class TestGlobalEngineManagement:
 
         # Assert
         assert engine1 is engine2  # Same instance
-
