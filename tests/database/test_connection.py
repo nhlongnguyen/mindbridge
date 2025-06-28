@@ -204,6 +204,7 @@ class TestGlobalEngineManagement:
     @patch.dict(
         os.environ, {"DATABASE_URL": "postgresql+asyncpg://user:pass@localhost/test"}
     )
+    @patch("mindbridge.database.connection._database_engine", None)
     @patch("mindbridge.database.connection.DatabaseEngine")
     def test_get_async_engine_success(self, mock_db_engine_class: Mock) -> None:
         """Expected use case: Get async engine with environment configuration."""
