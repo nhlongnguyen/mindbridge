@@ -648,11 +648,12 @@ LOG_LEVEL=INFO
 ## Continuous Integration Requirements
 
 ### GitHub Actions Workflow
-- All pushes must trigger CI pipeline
-- CI must run: pre-commit hooks, tests, security scanning
+- All pushes and pull requests trigger CI pipeline
+- CI must run: pre-commit hooks, tests
 - All code quality checks (linting, type checking, formatting) are handled by pre-commit hooks
+- Security scanning is handled by pre-commit hooks (bandit)
 - PR requirements: CI passing, code review approval, no merge conflicts
-- Automated deployment to staging on main branch updates
+- Automated deployment to staging on main branch pushes only
 
 ### Quality Gates
 - Test coverage must be >= 85%
