@@ -1,4 +1,4 @@
-# Midnbridge - Agentic RAG Documentation System
+# Mindbridge - Agentic RAG Documentation System
 
 ## Project Overview
 
