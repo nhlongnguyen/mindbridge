@@ -122,48 +122,60 @@ class TestHealthEndpoints:
 class TestHealthCheckFunctions:
     """Test cases for health check utility functions."""
 
-    @patch("mindbridge.database.connection.get_database_session")
-    def test_check_database_health_success(self, mock_get_session: MagicMock) -> None:
+    @pytest.mark.asyncio
+    @patch("mindbridge.database.connection.get_async_engine")
+    async def test_check_database_health_success(
+        self, mock_get_engine: MagicMock
+    ) -> None:
         """Expected use case: Database health check should return True when healthy."""
         from mindbridge.api.health import check_database_health
 
+        mock_engine = MagicMock()
+        mock_get_engine.return_value = mock_engine
         mock_session = MagicMock()
-        mock_get_session.return_value.__enter__.return_value = mock_session
+        mock_engine.get_session.return_value.__aenter__.return_value = mock_session
         mock_session.execute.return_value = None
 
-        result = check_database_health()
+        result = await check_database_health()
         assert result is True
 
-    @patch("mindbridge.database.connection.get_database_session")
-    def test_check_database_health_failure(self, mock_get_session: MagicMock) -> None:
+    @pytest.mark.asyncio
+    @patch("mindbridge.database.connection.get_async_engine")
+    async def test_check_database_health_failure(
+        self, mock_get_engine: MagicMock
+    ) -> None:
         """Failure case: Database health check should return False when unhealthy."""
         from mindbridge.api.health import check_database_health
 
-        mock_get_session.side_effect = Exception("Database connection failed")
+        mock_get_engine.side_effect = Exception("Database connection failed")
 
-        result = check_database_health()
+        result = await check_database_health()
         assert result is False
 
-    @patch("mindbridge.cache.redis_cache.get_redis_client")
-    def test_check_redis_health_success(self, mock_get_client: MagicMock) -> None:
+    @pytest.mark.asyncio
+    @patch("mindbridge.cache.redis_cache.get_redis_cache")
+    async def test_check_redis_health_success(self, mock_get_cache: MagicMock) -> None:
         """Expected use case: Redis health check should return True when healthy."""
         from mindbridge.api.health import check_redis_health
 
-        mock_client = MagicMock()
-        mock_get_client.return_value = mock_client
-        mock_client.ping.return_value = True
+        mock_cache = MagicMock()
+        mock_get_cache.return_value = mock_cache
+        mock_cache.connect.return_value = None
+        mock_cache.ping.return_value = True
+        mock_cache.disconnect.return_value = None
 
-        result = check_redis_health()
+        result = await check_redis_health()
         assert result is True
 
-    @patch("mindbridge.cache.redis_cache.get_redis_client")
-    def test_check_redis_health_failure(self, mock_get_client: MagicMock) -> None:
+    @pytest.mark.asyncio
+    @patch("mindbridge.cache.redis_cache.get_redis_cache")
+    async def test_check_redis_health_failure(self, mock_get_cache: MagicMock) -> None:
         """Failure case: Redis health check should return False when unhealthy."""
         from mindbridge.api.health import check_redis_health
 
-        mock_get_client.side_effect = Exception("Redis connection failed")
+        mock_get_cache.side_effect = Exception("Redis connection failed")
 
-        result = check_redis_health()
+        result = await check_redis_health()
         assert result is False
 
 

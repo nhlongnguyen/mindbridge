@@ -9,6 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
+from mindbridge.__about__ import __description__, __title__, __version__
 from mindbridge.api.health import router as health_router
 from mindbridge.api.metrics import router as metrics_router
 from mindbridge.observability.logging_config import configure_logging, get_logger
@@ -25,18 +26,18 @@ async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
     Yields:
         None during application runtime.
     """
-    logger = get_logger(__name__)
-
-    # Startup
-    logger.info("Starting Mindbridge application")
-
-    # Configure observability
+    # Configure observability first
     configure_logging(
         log_level=os.getenv("LOG_LEVEL", "INFO"),
         log_format=os.getenv("LOG_FORMAT", "console"),
     )
     configure_tracing(service_name="mindbridge")
 
+    # Get logger after configuration
+    logger = get_logger(__name__)
+
+    # Startup
+    logger.info("Starting Mindbridge application")
     logger.info("Observability configured")
 
     yield
@@ -47,16 +48,20 @@ async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
 
 # Create FastAPI application
 app = FastAPI(
-    title="Mindbridge",
-    description="Agentic RAG Documentation System",
-    version="0.1.0",
+    title=__title__,
+    description=__description__,
+    version=__version__,
     lifespan=lifespan,
 )
 
 # Configure CORS
+origins = os.getenv("ALLOWED_ORIGINS")
+if not origins:
+    raise RuntimeError("ALLOWED_ORIGINS environment variable must be set for security")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=os.getenv("ALLOWED_ORIGINS", "*").split(","),
+    allow_origins=origins.split(","),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -81,8 +86,8 @@ async def root() -> dict[str, Any]:
     logger.info("Root endpoint accessed")
 
     return {
-        "name": "Mindbridge",
-        "version": "0.1.0",
-        "description": "Agentic RAG Documentation System",
+        "name": __title__,
+        "version": __version__,
+        "description": __description__,
         "status": "running",
     }

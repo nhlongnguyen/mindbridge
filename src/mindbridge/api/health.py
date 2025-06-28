@@ -1,11 +1,15 @@
 """Health check API endpoints."""
 
+import asyncio
 from datetime import UTC, datetime
 from enum import Enum
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+from sqlalchemy import text
 
+from mindbridge.__about__ import __version__
+from mindbridge.database.connection import get_async_engine
 from mindbridge.observability.logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -35,62 +39,38 @@ class ReadinessResponse(BaseModel):
     checks: dict[str, str]
 
 
-def check_database_health() -> bool:
+async def check_database_health() -> bool:
     """Check database connectivity and health.
 
     Returns:
         True if database is healthy, False otherwise.
     """
     try:
-        import asyncio
-
-        from sqlalchemy import text
-
-        from mindbridge.database.connection import get_async_engine
-
-        async def _check_db() -> bool:
-            engine = get_async_engine()
-            async with engine.get_session() as session:
-                await session.execute(text("SELECT 1"))
-                return True
-
-        # Run async check in sync context
-        try:
-            return asyncio.run(_check_db())
-        except Exception as inner_e:
-            logger.error("Database async check failed", error=str(inner_e))
-            return False
-    except Exception as e:
-        logger.error("Database health check failed", error=str(e))
+        engine = get_async_engine()
+        async with engine.get_session() as session:
+            await session.execute(text("SELECT 1"))
+            return True
+    except Exception:
+        logger.exception("Database health check failed")
         return False
 
 
-def check_redis_health() -> bool:
+async def check_redis_health() -> bool:
     """Check Redis connectivity and health.
 
     Returns:
         True if Redis is healthy, False otherwise.
     """
     try:
-        import asyncio
-
         from mindbridge.cache.redis_cache import get_redis_cache
 
-        async def _check_redis() -> bool:
-            cache = get_redis_cache()
-            await cache.connect()
-            result = await cache.ping()
-            await cache.disconnect()
-            return result
-
-        # Run async check in sync context
-        try:
-            return asyncio.run(_check_redis())
-        except Exception as inner_e:
-            logger.error("Redis async check failed", error=str(inner_e))
-            return False
-    except Exception as e:
-        logger.error("Redis health check failed", error=str(e))
+        cache = get_redis_cache()
+        await cache.connect()
+        result = await cache.ping()
+        await cache.disconnect()
+        return result
+    except Exception:
+        logger.exception("Redis health check failed")
         return False
 
 
@@ -106,7 +86,7 @@ async def health_check() -> HealthResponse:
     return HealthResponse(
         status=HealthStatus.HEALTHY,
         timestamp=datetime.now(UTC).isoformat().replace("+00:00", "Z"),
-        version="0.1.0",
+        version=__version__,
     )
 
 
@@ -122,9 +102,10 @@ async def readiness_check() -> ReadinessResponse:
     """
     logger.info("Readiness check requested")
 
-    # Check individual services
-    db_healthy = check_database_health()
-    redis_healthy = check_redis_health()
+    # Check individual services concurrently
+    db_healthy, redis_healthy = await asyncio.gather(
+        check_database_health(), check_redis_health()
+    )
 
     checks = {
         "database": "healthy" if db_healthy else "unhealthy",
