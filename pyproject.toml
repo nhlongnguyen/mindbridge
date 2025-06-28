@@ -49,7 +49,7 @@ faker = "^37.4.0"
 ruff = "^0.1.9"
 black = "^24.3.0"
 mypy = "^1.8.0"
-pre-commit = "^3.6.0"
+pre-commit = "^4.2.0"
 bandit = "^1.7.5"
 
 [tool.poetry.group.test.dependencies]
