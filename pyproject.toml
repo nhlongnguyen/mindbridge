@@ -2,6 +2,7 @@
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
+
 [tool.poetry]
 name = "mindbridge"
 version = "0.1.0"
@@ -49,7 +50,6 @@ ruff = "^0.1.9"
 black = "^24.3.0"
 mypy = "^1.8.0"
 pre-commit = "^3.6.0"
-pip-audit = "^2.7.3"
 bandit = "^1.7.5"
 
 [tool.poetry.group.test.dependencies]

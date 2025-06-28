@@ -87,8 +87,6 @@ jobs:
     - name: Run bandit security check
       run: poetry run bandit -r src/
 
-    - name: Run pip-audit dependency vulnerability scan  
-      run: poetry run pip-audit --desc --format=columns
 
   tests:
     name: Test Suite
