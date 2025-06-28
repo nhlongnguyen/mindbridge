@@ -474,9 +474,7 @@ flowchart TD
     end
 
     subgraph "Pre-commit Commands"
-        P1["python3 -m poetry run ruff check src/ tests/ --fix"]
-        P2["python3 -m poetry run black src/ tests/"]
-        P3["python3 -m poetry run mypy src/"]
+        P1["python3 -m poetry run pre-commit run --all-files"]
     end
 
     subgraph "GitHub Project Status Commands"
@@ -486,8 +484,6 @@ flowchart TD
 
     I -.-> T1
     L -.-> P1
-    L -.-> P2
-    L -.-> P3
     F -.-> F1
     R -.-> R1
 ```
@@ -553,9 +549,7 @@ def new_feature(self):
 
 **Phase 3: Quality Assurance and Delivery**
 - Run full test suite: `python3 -m poetry run pytest tests/ --cov=src --cov-report=html`
-- Check linting: `python3 -m poetry run ruff check src/ tests/ --fix`
-- Format code: `python3 -m poetry run black src/ tests/`
-- Type checking: `python3 -m poetry run mypy src/`
+- Run pre-commit checks: `python3 -m poetry run pre-commit run --all-files`
 - Update documentation as needed
 
 **Phase 4: Commit and Pull Request**
@@ -639,19 +633,12 @@ python3 -m poetry run pre-commit install
 
 **Code Quality & Linting:**
 ```bash
-# Lint and auto-fix issues
-python3 -m poetry run ruff check src/ --fix
-python3 -m poetry run ruff check tests/ --fix
+# Run all pre-commit hooks (recommended)
+python3 -m poetry run pre-commit run --all-files
 
-# Format code
+# Individual commands (if needed)
+python3 -m poetry run ruff check src/ tests/ --fix
 python3 -m poetry run black src/ tests/
-
-# Type checking
-python3 -m poetry run mypy src/
-
-# Run all quality checks
-python3 -m poetry run ruff check src/ --fix && \
-python3 -m poetry run black src/ tests/ && \
 python3 -m poetry run mypy src/
 ```
 
@@ -703,10 +690,8 @@ python3 -m poetry show --tree
 **Quality Gates (Run Before Commits):**
 ```bash
 # Complete quality check pipeline
-python3 -m poetry run ruff check src/ tests/ --fix && \
-python3 -m poetry run black src/ tests/ && \
-python3 -m poetry run mypy src/ && \
-python3 -m poetry run pytest tests/ --cov=src --cov-fail-under=85
+python3 -m poetry run pytest tests/ --cov=src --cov-fail-under=85 && \
+python3 -m poetry run pre-commit run --all-files
 ```
 
 ### Environment Variables
