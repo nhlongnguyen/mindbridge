@@ -1,6 +1,6 @@
 """Database health checking functionality."""
 
-from datetime import datetime
+from datetime import datetime, UTC
 from typing import Any
 
 from sqlalchemy import bindparam, literal_column, select, text
@@ -29,7 +29,7 @@ class DatabaseHealthChecker:
         """
         result: dict[str, Any] = {
             "status": "healthy",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "checks": {}
         }
 
@@ -64,17 +64,15 @@ class DatabaseHealthChecker:
         """
         result: dict[str, Any] = {
             "status": "healthy",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "checks": {}
         }
 
         try:
             async with self._database_engine.get_session() as session:
-                # Check if pgvector extension exists
-                extension_query: Select[Any] = (
-                    select(literal_column("extname"), literal_column("extversion"))
-                    .select_from(literal_column("pg_extension"))
-                    .where(literal_column("extname") == bindparam("ext_name"))
+                # Check if pgvector extension exists (safe static query)
+                extension_query = text(
+                    "SELECT extname, extversion FROM pg_extension WHERE extname = :ext_name"
                 )
                 extension_result = await session.execute(extension_query, {"ext_name": "vector"})
                 extension_row = extension_result.fetchone()
@@ -126,7 +124,7 @@ class DatabaseHealthChecker:
         """
         result: dict[str, Any] = {
             "status": "healthy",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "checks": {}
         }
 
@@ -177,7 +175,7 @@ class DatabaseHealthChecker:
 
         return {
             "status": overall_status,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "checks": {
                 **connectivity_check["checks"],
                 **pgvector_check["checks"],

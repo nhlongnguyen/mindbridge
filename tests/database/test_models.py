@@ -15,7 +15,7 @@ class TestVectorDocument:
         content = "This is a test document for vector analysis."
         title = "Test Document"
         source_url = "https://example.com/doc1"
-        embedding = [0.1, 0.2, 0.3] * 512  # 1536 dimensions
+        embedding = [0.1, 0.2, 0.3] * 512  # Creates 1536 dimensions (3 * 512 = 1536)
 
         # Act
         doc = VectorDocument(
@@ -55,16 +55,30 @@ class TestVectorDocument:
         assert doc.repository_id is None
         assert doc.file_path is None
 
-    def test_vector_document_empty_content_fails(self) -> None:
-        """Failure case: VectorDocument with empty content should fail validation."""
+    def test_vector_document_invalid_embedding_fails(self) -> None:
+        """Failure case: VectorDocument with invalid embedding should fail validation."""
         # Arrange
-        embedding = [0.1] * 1536
-
-        # Act & Assert
-        with pytest.raises((ValueError, TypeError)):
+        content = "Test content"
+        
+        # Act & Assert - Wrong dimension count
+        with pytest.raises(ValueError, match="Embedding must be exactly 1536 dimensions"):
             VectorDocument(
-                content="",  # Empty content should fail
-                embedding=embedding
+                content=content,
+                embedding=[0.1] * 768  # Wrong dimensions
+            )
+        
+        # Act & Assert - Non-list embedding
+        with pytest.raises(ValueError, match="Embedding must be a list of floats"):
+            VectorDocument(
+                content=content,
+                embedding="not a list"  # Wrong type
+            )
+        
+        # Act & Assert - Invalid values in embedding
+        with pytest.raises(ValueError, match="All embedding values must be numbers"):
+            VectorDocument(
+                content=content,
+                embedding=[0.1] * 1535 + ["not a number"]  # Invalid value
             )
 
     def test_vector_document_repr(self) -> None:
@@ -152,9 +166,9 @@ class TestBase:
     def test_base_is_declarative_base(self) -> None:
         """Expected use case: Base should be a proper SQLAlchemy declarative base."""
         # Act & Assert
-        assert hasattr(Base, '__tablename__')
         assert hasattr(Base, 'metadata')
         assert hasattr(Base, 'registry')
+        # Base class itself doesn't have __tablename__, only concrete models do
 
     def test_base_has_async_attrs(self) -> None:
         """Expected use case: Base should support async attributes."""

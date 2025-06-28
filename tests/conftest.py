@@ -51,7 +51,7 @@ def mock_redis() -> AsyncMock:
 def mock_embedding_service() -> AsyncMock:
     """Mock embedding service for testing."""
     mock = AsyncMock()
-    mock.generate_embedding.return_value = [0.1] * 384  # Mock embedding vector
+    mock.generate_embedding.return_value = [0.1] * 1536  # Mock embedding vector (1536 dimensions)
     return mock
 
 

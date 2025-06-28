@@ -80,20 +80,20 @@ class TestVectorSimilarityOperations:
             id=1,
             content="Document 1",
             title="Title 1",
-            embedding=[0.1, 0.2, 0.3]
+            embedding=[0.1, 0.2, 0.3] * 512  # 1536 dimensions
         )
         doc2 = VectorDocument(
             id=2,
             content="Document 2",
             title="Title 2",
-            embedding=[0.4, 0.5, 0.6]
+            embedding=[0.4, 0.5, 0.6] * 512  # 1536 dimensions
         )
 
         mock_result = Mock()
         mock_result.fetchall.return_value = [doc1, doc2]
         mock_session.execute.return_value = mock_result
 
-        query_vector = [0.2, 0.3, 0.4]
+        query_vector = [0.2, 0.3, 0.4] * 512  # 1536 dimensions
 
         # Act
         # This would be the actual query in implementation
@@ -124,7 +124,7 @@ class TestVectorSimilarityOperations:
             id=1,
             content="Python code document",
             title="Python Guide",
-            embedding=[0.1, 0.2, 0.3],
+            embedding=[0.1, 0.2, 0.3] * 512,  # 1536 dimensions
             document_type="code"
         )
 
@@ -132,7 +132,7 @@ class TestVectorSimilarityOperations:
         mock_result.fetchall.return_value = [doc]
         mock_session.execute.return_value = mock_result
 
-        query_vector = [0.2, 0.3, 0.4]
+        query_vector = [0.2, 0.3, 0.4] * 512  # 1536 dimensions
 
         # Act
         query = text("""
@@ -162,7 +162,7 @@ class TestVectorSimilarityOperations:
         mock_result.fetchall.return_value = []
         mock_session.execute.return_value = mock_result
 
-        query_vector = [0.9, 0.9, 0.9]
+        query_vector = [0.9, 0.9, 0.9] * 512  # 1536 dimensions
 
         # Act
         query = text("""
@@ -189,7 +189,7 @@ class TestVectorSimilarityOperations:
         doc = VectorDocument(
             id=1,
             content="Close document",
-            embedding=[0.1, 0.2, 0.3]
+            embedding=[0.1, 0.2, 0.3] * 512  # 1536 dimensions
         )
 
         mock_result = Mock()
@@ -221,7 +221,7 @@ class TestVectorSimilarityOperations:
         """Edge case: Validate vector dimensions match model requirements."""
         # Arrange
         correct_embedding = [0.1] * 1536  # Correct 1536 dimensions
-        incorrect_embedding = [0.1] * 512  # Incorrect dimensions
+        incorrect_embedding = [0.1] * 768  # Incorrect dimensions
 
         # Act & Assert - Correct dimensions
         doc_correct = VectorDocument(
@@ -230,14 +230,12 @@ class TestVectorSimilarityOperations:
         )
         assert len(doc_correct.embedding) == 1536
 
-        # Act & Assert - Incorrect dimensions should be handled by validation
-        doc_incorrect = VectorDocument(
-            content="Test document",
-            embedding=incorrect_embedding
-        )
-        # Note: In a real implementation, this might raise a validation error
-        # For now, we just check the length is preserved
-        assert len(doc_incorrect.embedding) == 512
+        # Act & Assert - Incorrect dimensions should raise validation error
+        with pytest.raises(ValueError, match="Embedding must be exactly 1536 dimensions"):
+            VectorDocument(
+                content="Test document",
+                embedding=incorrect_embedding
+            )
 
     @pytest.mark.asyncio
     async def test_batch_vector_insert_success(self) -> None:
