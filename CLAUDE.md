@@ -345,9 +345,13 @@ def analyze_repository(
 2. **Understand Requirements**: Analyze issue description, acceptance criteria, and dependencies
 3. **Create Implementation Plan**: Provide detailed technical plan in issue comments
 4. **Plan Review**: Wait for plan approval before starting implementation
-5. **TDD Implementation**: Write tests first, then implement functionality
-6. **Quality Gates**: Ensure all tests pass and linting rules are satisfied
-7. **Status Updates**: Update GitHub issue status throughout development
+5. **Create Feature Branch**: Create and switch to a new feature branch using format `feature/R-XXX-description`
+6. **Update Task Status**: Mark GitHub issue as "in progress" using GitHub CLI
+7. **TDD Implementation**: Write tests first, then implement functionality
+8. **Quality Gates**: Ensure all tests pass and linting rules are satisfied
+9. **Commit Changes**: Stage and commit all changes with descriptive commit message
+10. **Create Pull Request**: Push branch and create PR with detailed description linking to issue
+11. **Status Updates**: Update GitHub issue status throughout development
 
 ### Implementation Workflow
 
@@ -410,12 +414,51 @@ def new_feature(self):
     return expected_result
 ```
 
-**Phase 3: Quality Assurance**
+**Phase 3: Quality Assurance and Delivery**
 - Run full test suite: `pytest tests/ --cov=src --cov-report=html`
 - Check linting: `ruff check src/ tests/`
 - Format code: `black src/ tests/`
 - Type checking: `mypy src/`
 - Update documentation as needed
+
+**Phase 4: Commit and Pull Request**
+```bash
+# Stage and commit changes
+git add .
+git commit -m "feat: R-XXX Implementation description
+
+- Detailed bullet points of changes
+- Reference to acceptance criteria met
+- Any breaking changes noted
+
+🤖 Generated with [Claude Code](https://claude.ai/code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>"
+
+# Push branch and create PR
+git push -u origin feature/R-XXX-description
+gh pr create --title "R-XXX: Implementation Title" --body "
+## Summary
+Brief description of implementation
+
+## Changes
+- [ ] Feature/change 1
+- [ ] Feature/change 2
+
+## Testing
+- [ ] Unit tests added/updated
+- [ ] Integration tests passing
+- [ ] Manual testing completed
+
+## Quality Gates
+- [ ] All tests passing
+- [ ] Code coverage >= 85%
+- [ ] Linting rules pass
+- [ ] Type checking clean
+
+Closes #XXX
+"
+```
 
 ### GitHub Labels and Templates
 
