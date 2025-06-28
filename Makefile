@@ -48,7 +48,7 @@ type-check:
 
 security-check:
 	poetry run bandit -r src/
-	poetry run safety check
+	poetry run safety scan
 
 # Quality gates (run all checks)
 quality-check: lint type-check security-check
