@@ -355,6 +355,66 @@ def analyze_repository(
 
 ### Implementation Workflow
 
+**Workflow Diagram:**
+
+```mermaid
+flowchart TD
+    A[Fetch Task from GitHub Projects] --> B[Understand Requirements]
+    B --> C[Create Implementation Plan]
+    C --> D[Plan Review & Approval]
+    D --> E[Create Feature Branch]
+    E --> F[Update Task Status to 'In Progress']
+    F --> G[TDD: Write Failing Tests]
+    G --> H[Implement Code to Pass Tests]
+    H --> I[Run Test Suite]
+    
+    I --> J{All Tests Pass?}
+    J -->|No| K[Fix Failing Tests]
+    K --> I
+    J -->|Yes| L[Run Pre-commit Checks]
+    
+    L --> M{Pre-commit Checks Pass?}
+    M -->|No| N[Fix Linting/Type/Format Issues]
+    N --> L
+    M -->|Yes| O[Stage & Commit Changes]
+    
+    O --> P[Push Branch]
+    P --> Q[Create Pull Request]
+    Q --> R[Update GitHub Issue Status]
+    
+    style I fill:#e1f5fe
+    style J fill:#fff3e0
+    style K fill:#ffebee
+    style L fill:#e8f5e8
+    style M fill:#fff3e0
+    style N fill:#ffebee
+    style O fill:#e8f5e8
+    
+    subgraph "Quality Gates Loop"
+        I
+        J
+        K
+        L
+        M
+        N
+    end
+    
+    subgraph "Test Commands"
+        T1["python3 -m poetry run pytest tests/ --cov=src --cov-report=html"]
+    end
+    
+    subgraph "Pre-commit Commands"
+        P1["python3 -m poetry run ruff check src/ tests/ --fix"]
+        P2["python3 -m poetry run black src/ tests/"]
+        P3["python3 -m poetry run mypy src/"]
+    end
+    
+    I -.-> T1
+    L -.-> P1
+    L -.-> P2
+    L -.-> P3
+```
+
 **Phase 1: Task Analysis and Planning**
 ```markdown
 ## Implementation Plan Template (Required in GitHub Issues)
