@@ -8,7 +8,8 @@ services:
       - "8000:8000"
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER:-mindbridge}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-mindbridge}
-      - REDIS_URL=redis://redis:6379/0
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
       - ENVIRONMENT=${ENVIRONMENT:-development}
     depends_on:
@@ -25,7 +26,8 @@ services:
     command: celery -A mindbridge.celery worker --loglevel=info
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER:-mindbridge}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-mindbridge}
-      - REDIS_URL=redis://redis:6379/0
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
       - ENVIRONMENT=${ENVIRONMENT:-development}
     depends_on:
@@ -42,7 +44,8 @@ services:
     command: celery -A mindbridge.celery beat --loglevel=info
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER:-mindbridge}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-mindbridge}
-      - REDIS_URL=redis://redis:6379/0
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
       - ENVIRONMENT=${ENVIRONMENT:-development}
     depends_on:
@@ -63,25 +66,23 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
-    ports:
-      - "5432:5432"
     networks:
       - mindbridge-network
 
   # Redis for caching and job queue
   redis:
     image: redis:7-alpine
-    ports:
-      - "6379:6379"
     command: redis-server /usr/local/etc/redis/redis.conf
     volumes:
       - redis_data:/data
       - ./config/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
     networks:
       - mindbridge-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -90,8 +91,6 @@ services:
   # Optional: Redis Insight for debugging
   redis-insight:
     image: redislabs/redisinsight:latest
-    ports:
-      - "8001:8001"
     depends_on:
       - redis
     networks:
