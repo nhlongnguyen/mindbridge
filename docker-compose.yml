@@ -7,10 +7,10 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql://mindbridge:mindbridge@postgres:5432/mindbridge
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-mindbridge}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-mindbridge}
       - REDIS_URL=redis://redis:6379/0
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-default-secret-key}
-      - ENVIRONMENT=development
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
     depends_on:
       - postgres
       - redis
@@ -24,10 +24,10 @@ services:
     build: .
     command: celery -A mindbridge.celery worker --loglevel=info
     environment:
-      - DATABASE_URL=postgresql://mindbridge:mindbridge@postgres:5432/mindbridge
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-mindbridge}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-mindbridge}
       - REDIS_URL=redis://redis:6379/0
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-default-secret-key}
-      - ENVIRONMENT=development
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
     depends_on:
       - postgres
       - redis
@@ -41,10 +41,10 @@ services:
     build: .
     command: celery -A mindbridge.celery beat --loglevel=info
     environment:
-      - DATABASE_URL=postgresql://mindbridge:mindbridge@postgres:5432/mindbridge
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-mindbridge}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-mindbridge}
       - REDIS_URL=redis://redis:6379/0
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-default-secret-key}
-      - ENVIRONMENT=development
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
     depends_on:
       - postgres
       - redis
@@ -57,9 +57,9 @@ services:
   postgres:
     image: pgvector/pgvector:pg15
     environment:
-      - POSTGRES_DB=mindbridge
-      - POSTGRES_USER=mindbridge
-      - POSTGRES_PASSWORD=mindbridge
+      - POSTGRES_DB=${POSTGRES_DB:-mindbridge}
+      - POSTGRES_USER=${POSTGRES_USER:-mindbridge}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
