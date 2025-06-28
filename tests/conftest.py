@@ -3,7 +3,6 @@
 import asyncio
 import os
 from collections.abc import AsyncGenerator, Generator
-from typing import Any, Dict, Union
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -57,7 +56,7 @@ def mock_embedding_service() -> AsyncMock:
 
 
 @pytest.fixture
-def sample_repository_data() -> Dict[str, str | int]:
+def sample_repository_data() -> dict[str, str | int]:
     """Sample repository data for testing."""
     return {
         "name": "test-repo",
@@ -71,7 +70,7 @@ def sample_repository_data() -> Dict[str, str | int]:
 
 
 @pytest.fixture
-def sample_document_data() -> Dict[str, str | Dict[str, str]]:
+def sample_document_data() -> dict[str, str | dict[str, str]]:
     """Sample document data for testing."""
     return {
         "title": "Test Document",
@@ -86,7 +85,7 @@ def sample_document_data() -> Dict[str, str | Dict[str, str]]:
 
 
 @pytest.fixture
-def sample_search_query() -> Dict[str, str | Dict[str, str] | int]:
+def sample_search_query() -> dict[str, str | dict[str, str] | int]:
     """Sample search query for testing."""
     return {
         "query": "How to implement async functions in Python?",
