@@ -198,6 +198,7 @@ class TestDocumentProcessor:
 - **Import Sorter**: isort with Black compatibility
 - **Linter**: Ruff (replaces flake8, pylint, isort, and more)
 - **Type Checker**: mypy with strict mode enabled
+- **File Format**: All files must end with a single newline character
 
 ### Pre-commit Configuration
 ```yaml
@@ -648,7 +649,8 @@ LOG_LEVEL=INFO
 
 ### GitHub Actions Workflow
 - All pushes must trigger CI pipeline
-- CI must run: tests, linting, type checking, security scanning
+- CI must run: pre-commit hooks, tests, security scanning
+- All code quality checks (linting, type checking, formatting) are handled by pre-commit hooks
 - PR requirements: CI passing, code review approval, no merge conflicts
 - Automated deployment to staging on main branch updates
 
