@@ -415,10 +415,10 @@ def new_feature(self):
 ```
 
 **Phase 3: Quality Assurance and Delivery**
-- Run full test suite: `pytest tests/ --cov=src --cov-report=html`
-- Check linting: `ruff check src/ tests/`
-- Format code: `black src/ tests/`
-- Type checking: `mypy src/`
+- Run full test suite: `python3 -m poetry run pytest tests/ --cov=src --cov-report=html`
+- Check linting: `python3 -m poetry run ruff check src/ tests/ --fix`
+- Format code: `python3 -m poetry run black src/ tests/`
+- Type checking: `python3 -m poetry run mypy src/`
 - Update documentation as needed
 
 **Phase 4: Commit and Pull Request**
@@ -483,21 +483,93 @@ Closes #XXX
 
 ### Required Tools
 ```bash
-# Python environment
-pyenv install 3.11.7
-pyenv local 3.11.7
-pip install poetry
+# Python environment (Python 3.12+ required)
+# Poetry is already installed via pip
 
-# Development dependencies
-poetry install --with dev,test
+# One-time setup: Install all dependencies
+python3 -m poetry install
 
-# Pre-commit hooks
-pre-commit install
+# Optional: Install pre-commit hooks
+python3 -m poetry run pre-commit install
 
 # IDE configuration
 # - Configure Black, Ruff, and mypy integration
 # - Set up pytest runner
 # - Enable type checking in editor
+```
+
+### Development Commands (Use These for This Project)
+
+**Code Quality & Linting:**
+```bash
+# Lint and auto-fix issues
+python3 -m poetry run ruff check src/ --fix
+python3 -m poetry run ruff check tests/ --fix
+
+# Format code
+python3 -m poetry run black src/ tests/
+
+# Type checking
+python3 -m poetry run mypy src/
+
+# Run all quality checks
+python3 -m poetry run ruff check src/ --fix && \
+python3 -m poetry run black src/ tests/ && \
+python3 -m poetry run mypy src/
+```
+
+**Testing:**
+```bash
+# Run all tests
+python3 -m poetry run pytest tests/ -v
+
+# Run tests with coverage
+python3 -m poetry run pytest tests/ --cov=src --cov-report=html
+
+# Run specific test file
+python3 -m poetry run pytest tests/database/test_models.py -v
+
+# Run tests matching pattern
+python3 -m poetry run pytest tests/ -k "test_vector" -v
+```
+
+**Application Commands:**
+```bash
+# Start development server
+python3 -m poetry run uvicorn src.mindbridge.main:app --reload
+
+# Start with custom host/port
+python3 -m poetry run uvicorn src.mindbridge.main:app --host 0.0.0.0 --port 8080 --reload
+
+# Run database migrations (when available)
+python3 -m poetry run alembic upgrade head
+
+# Generate new migration
+python3 -m poetry run alembic revision --autogenerate -m "Description"
+```
+
+**Dependency Management:**
+```bash
+# Add new dependency
+python3 -m poetry add package-name
+
+# Add development dependency
+python3 -m poetry add --group dev package-name
+
+# Update dependencies
+python3 -m poetry update
+
+# Show dependency tree
+python3 -m poetry show --tree
+```
+
+**Quality Gates (Run Before Commits):**
+```bash
+# Complete quality check pipeline
+python3 -m poetry run ruff check src/ tests/ --fix && \
+python3 -m poetry run black src/ tests/ && \
+python3 -m poetry run mypy src/ && \
+python3 -m poetry run pytest tests/ --cov=src --cov-fail-under=85
 ```
 
 ### Environment Variables
