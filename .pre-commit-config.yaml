@@ -25,7 +25,7 @@ repos:
       - id: ruff-format
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.8.0
+    rev: v1.16.1
     hooks:
       - id: mypy
         additional_dependencies: [
@@ -37,7 +37,10 @@ repos:
           types-setuptools,
           pytest,
           pytest-asyncio,
-          httpx
+          httpx,
+          fastapi==0.115.14,
+          pydantic>=2.5.0,
+          starlette>=0.40.0
         ]
         args: [--config-file=pyproject.toml]
 
