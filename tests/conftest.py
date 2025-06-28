@@ -27,7 +27,7 @@ def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
     loop.close()
 
 
-@pytest_asyncio.fixture  # type: ignore[misc]
+@pytest_asyncio.fixture
 async def async_client() -> AsyncGenerator[AsyncClient, None]:
     """Create an async HTTP client for testing FastAPI endpoints."""
     # This will be implemented once FastAPI app is created

@@ -34,9 +34,12 @@ repos:
           types-PyYAML,
           types-passlib,
           types-click,
-          types-setuptools
+          types-setuptools,
+          pytest,
+          pytest-asyncio,
+          httpx
         ]
-        args: [--ignore-missing-imports]
+        args: [--config-file=pyproject.toml]
 
   - repo: https://github.com/PyCQA/bandit
     rev: 1.7.5
