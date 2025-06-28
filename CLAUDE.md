@@ -332,12 +332,28 @@ def analyze_repository(
 
 ## Project Management and GitHub Integration
 
+### GitHub Project Configuration
+
+**Project Details:**
+- **Project ID**: `PVT_kwHOAEZ9Ks4A8mS8`
+- **Project Number**: `1`
+- **Project Name**: "Mindbrige development"
+- **Owner**: nhlongnguyen
+- **Status Field ID**: `PVTSSF_lAHOAEZ9Ks4A8mS8zgwjNKs`
+
+**Status Options:**
+- **Backlog** (ID: `f75ad846`) - This item hasn't been started
+- **Ready** (ID: `e18bf179`) - This is ready to be picked up
+- **In progress** (ID: `47fc9ee4`) - This is actively being worked on
+- **In review** (ID: `aba860b9`) - This item is in review
+- **Done** (ID: `98236657`) - This has been completed
+
 ### Task Management Rules (Strictly Enforced)
 
 **GitHub Project Integration:**
 - All development work must be tracked in GitHub Projects
 - Tasks must be created as GitHub Issues with proper labels
-- Use project board columns: Backlog, In Progress, Review, Done
+- Use project board columns: Backlog, Ready, In Progress, In Review, Done
 - Link all commits and PRs to their respective issues
 
 **Task Workflow (Mandatory Process):**
@@ -347,12 +363,62 @@ def analyze_repository(
 3. **Create Implementation Plan**: Provide detailed technical plan in issue comments
 4. **Plan Review**: Wait for plan approval before starting implementation
 5. **Create Feature Branch**: Create and switch to a new feature branch using format `feature/R-XXX-description`
-6. **Update Task Status**: Mark GitHub issue as "in progress" using GitHub CLI
+6. **Update Task Status to "In Progress"**: Mark GitHub project task as "in progress" using GitHub CLI
 7. **TDD Implementation**: Write tests first, then implement functionality
 8. **Quality Gates**: Ensure all tests pass and linting rules are satisfied
 9. **Commit Changes**: Stage and commit all changes with descriptive commit message
 10. **Create Pull Request**: Push branch and create PR with detailed description linking to issue
-11. **Status Updates**: Update GitHub issue status throughout development
+11. **Update Task Status to "In Review"**: Mark GitHub project task as "in review" using GitHub CLI
+12. **Status Updates**: Update GitHub issue status throughout development
+
+### GitHub Project Status Management Commands
+
+**Update Task Status to "In Progress" (Before Implementation):**
+```bash
+# Get the task item ID from GitHub project (replace TASK_NUMBER with actual issue number)
+TASK_ITEM_ID=$(gh project item-list 1 --owner nhlongnguyen | grep "R-XXX:" | awk '{print $NF}')
+
+# Update status to "In Progress"
+gh project item-edit \
+  --id $TASK_ITEM_ID \
+  --field-id PVTSSF_lAHOAEZ9Ks4A8mS8zgwjNKs \
+  --single-select-option-id 47fc9ee4 \
+  --project-id PVT_kwHOAEZ9Ks4A8mS8
+
+# Alternative: Direct command with known item ID
+gh project item-edit \
+  --id PVTI_lAHOAEZ9Ks4A8mS8zgcBQO[X] \
+  --field-id PVTSSF_lAHOAEZ9Ks4A8mS8zgwjNKs \
+  --single-select-option-id 47fc9ee4 \
+  --project-id PVT_kwHOAEZ9Ks4A8mS8
+```
+
+**Update Task Status to "In Review" (After Creating PR):**
+```bash
+# Get the task item ID from GitHub project (replace TASK_NUMBER with actual issue number)
+TASK_ITEM_ID=$(gh project item-list 1 --owner nhlongnguyen | grep "R-XXX:" | awk '{print $NF}')
+
+# Update status to "In Review"
+gh project item-edit \
+  --id $TASK_ITEM_ID \
+  --field-id PVTSSF_lAHOAEZ9Ks4A8mS8zgwjNKs \
+  --single-select-option-id aba860b9 \
+  --project-id PVT_kwHOAEZ9Ks4A8mS8
+
+# Alternative: Direct command with known item ID
+gh project item-edit \
+  --id PVTI_lAHOAEZ9Ks4A8mS8zgcBQO[X] \
+  --field-id PVTSSF_lAHOAEZ9Ks4A8mS8zgwjNKs \
+  --single-select-option-id aba860b9 \
+  --project-id PVT_kwHOAEZ9Ks4A8mS8
+```
+
+**Status Quick Reference:**
+- **Backlog**: `f75ad846`
+- **Ready**: `e18bf179`
+- **In Progress**: `47fc9ee4`
+- **In Review**: `aba860b9`
+- **Done**: `98236657`
 
 ### Implementation Workflow
 
@@ -364,7 +430,7 @@ flowchart TD
     B --> C[Create Implementation Plan]
     C --> D[Plan Review & Approval]
     D --> E[Create Feature Branch]
-    E --> F[Update Task Status to 'In Progress']
+    E --> F[Update Project Status to 'In Progress']
     F --> G[TDD: Write Failing Tests]
     G --> H[Implement Code to Pass Tests]
     H --> I[Run Test Suite]
@@ -381,7 +447,8 @@ flowchart TD
 
     O --> P[Push Branch]
     P --> Q[Create Pull Request]
-    Q --> R[Update GitHub Issue Status]
+    Q --> R[Update Project Status to 'In Review']
+    R --> S[Update GitHub Issue Status]
 
     style I fill:#e1f5fe
     style J fill:#fff3e0
@@ -390,6 +457,8 @@ flowchart TD
     style M fill:#fff3e0
     style N fill:#ffebee
     style O fill:#e8f5e8
+    style F fill:#fff8dc
+    style R fill:#f0e68c
 
     subgraph "Quality Gates Loop"
         I
@@ -410,10 +479,17 @@ flowchart TD
         P3["python3 -m poetry run mypy src/"]
     end
 
+    subgraph "GitHub Project Status Commands"
+        F1["gh project item-edit --id TASK_ID --field-id STATUS_FIELD --single-select-option-id IN_PROGRESS"]
+        R1["gh project item-edit --id TASK_ID --field-id STATUS_FIELD --single-select-option-id IN_REVIEW"]
+    end
+
     I -.-> T1
     L -.-> P1
     L -.-> P2
     L -.-> P3
+    F -.-> F1
+    R -.-> R1
 ```
 
 **Phase 1: Task Analysis and Planning**
