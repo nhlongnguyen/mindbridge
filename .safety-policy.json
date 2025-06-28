@@ -3,11 +3,7 @@
     "ignore-unpinned-requirements": false,
     "ignore-cvss-severity-below": 7.0,
     "ignore-cvss-unknown-severity": false,
-    "ignore-vulnerabilities": {
-      "reason": "List of vulnerability IDs to ignore with reasons",
-      "expires": "2024-12-31",
-      "vulnerabilities": []
-    }
+    "ignore-vulnerabilities": []
   },
   "alert": {
     "ignore-unpinned-requirements": true
