@@ -535,4 +535,4 @@ local_*
 *_local
 
 # Claude AI specific files
-.claude/
+.claude/poetry.toml

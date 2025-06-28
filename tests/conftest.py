@@ -3,6 +3,7 @@
 import asyncio
 import os
 from collections.abc import AsyncGenerator, Generator
+from typing import Any, Dict, Union
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -27,7 +28,7 @@ def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
     loop.close()
 
 
-@pytest_asyncio.fixture
+@pytest_asyncio.fixture  # type: ignore[misc]
 async def async_client() -> AsyncGenerator[AsyncClient, None]:
     """Create an async HTTP client for testing FastAPI endpoints."""
     # This will be implemented once FastAPI app is created
@@ -36,19 +37,19 @@ async def async_client() -> AsyncGenerator[AsyncClient, None]:
 
 
 @pytest.fixture
-def mock_database():
+def mock_database() -> MagicMock:
     """Mock database connection for unit tests."""
     return MagicMock()
 
 
 @pytest.fixture
-def mock_redis():
+def mock_redis() -> AsyncMock:
     """Mock Redis connection for unit tests."""
     return AsyncMock()
 
 
 @pytest.fixture
-def mock_embedding_service():
+def mock_embedding_service() -> AsyncMock:
     """Mock embedding service for testing."""
     mock = AsyncMock()
     mock.generate_embedding.return_value = [0.1] * 384  # Mock embedding vector
@@ -56,7 +57,7 @@ def mock_embedding_service():
 
 
 @pytest.fixture
-def sample_repository_data():
+def sample_repository_data() -> Dict[str, str | int]:
     """Sample repository data for testing."""
     return {
         "name": "test-repo",
@@ -70,7 +71,7 @@ def sample_repository_data():
 
 
 @pytest.fixture
-def sample_document_data():
+def sample_document_data() -> Dict[str, str | Dict[str, str]]:
     """Sample document data for testing."""
     return {
         "title": "Test Document",
@@ -85,7 +86,7 @@ def sample_document_data():
 
 
 @pytest.fixture
-def sample_search_query():
+def sample_search_query() -> Dict[str, str | Dict[str, str] | int]:
     """Sample search query for testing."""
     return {
         "query": "How to implement async functions in Python?",

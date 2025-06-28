@@ -38,11 +38,11 @@ class DocumentProcessor:
     def __init__(self, embedding_service: EmbeddingService):
         self._embedding_service = embedding_service
         self._processed_count = 0
-    
+
     def process_document(self, document: Document) -> ProcessedDocument:
         # Implementation here
         pass
-    
+
     @property
     def processed_count(self) -> int:
         return self._processed_count
@@ -89,7 +89,7 @@ class EmbeddingService(Protocol):
 class VectorStore(ABC):
     @abstractmethod
     def store_vector(self, vector: List[float], metadata: Dict) -> str: ...
-    
+
     @abstractmethod
     def search_similar(self, vector: List[float], limit: int) -> List[SearchResult]: ...
 
@@ -97,7 +97,7 @@ class DocumentIndexer:
     def __init__(self, embedding_service: EmbeddingService, vector_store: VectorStore):
         self._embedding_service = embedding_service
         self._vector_store = vector_store
-    
+
     def index_document(self, document: Document) -> IndexResult:
         embedding = self._embedding_service.generate_embedding(document.content)
         vector_id = self._vector_store.store_vector(embedding, document.metadata)
@@ -155,30 +155,30 @@ class DocumentIndexer:
 ```python
 # Example test structure
 class TestDocumentProcessor:
-    
+
     def test_process_document_success(self, mock_embedding_service, sample_document):
         """Expected use case: Process valid document successfully"""
         processor = DocumentProcessor(mock_embedding_service)
         result = processor.process_document(sample_document)
-        
+
         assert result.status == ProcessingStatus.SUCCESS
         assert result.chunks_count > 0
         mock_embedding_service.generate_embedding.assert_called()
-    
+
     def test_process_empty_document(self, mock_embedding_service):
         """Edge case: Handle empty document"""
         processor = DocumentProcessor(mock_embedding_service)
         empty_doc = Document(content="", metadata={})
         result = processor.process_document(empty_doc)
-        
+
         assert result.status == ProcessingStatus.SKIPPED
         assert result.chunks_count == 0
-    
+
     def test_process_document_embedding_failure(self, mock_embedding_service, sample_document):
         """Failure case: Handle embedding service failure"""
         mock_embedding_service.generate_embedding.side_effect = EmbeddingError("Service unavailable")
         processor = DocumentProcessor(mock_embedding_service)
-        
+
         with pytest.raises(DocumentProcessingError):
             processor.process_document(sample_document)
 ```
@@ -208,13 +208,13 @@ repos:
     hooks:
       - id: black
         language_version: python3.11
-  
+
   - repo: https://github.com/charliermarsh/ruff-pre-commit
     rev: v0.1.9
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
-  
+
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.8.0
     hooks:
@@ -242,7 +242,7 @@ class SearchService(Protocol):
     def search(self, query: str, limit: int = 10) -> List[SearchResult]: ...
 
 def process_search_results(
-    results: List[SearchResult], 
+    results: List[SearchResult],
     minimum_score: float = 0.7
 ) -> Optional[List[SearchResult]]:
     if not results:
@@ -264,24 +264,24 @@ def process_search_results(
 
 ```python
 def analyze_repository(
-    github_url: str, 
-    branch: str = "main", 
+    github_url: str,
+    branch: str = "main",
     include_tests: bool = False
 ) -> RepositoryAnalysis:
     """Analyze a GitHub repository and extract code structure.
-    
+
     Args:
         github_url: The GitHub repository URL to analyze
         branch: The git branch to analyze (defaults to "main")
         include_tests: Whether to include test files in analysis
-        
+
     Returns:
         RepositoryAnalysis containing extracted code structure and metadata
-        
+
     Raises:
         RepositoryNotFoundError: If the repository cannot be accessed
         AnalysisError: If the analysis process fails
-        
+
     Example:
         >>> analysis = analyze_repository("https://github.com/user/repo")
         >>> print(f"Found {len(analysis.classes)} classes")
@@ -399,7 +399,7 @@ def analyze_repository(
 def test_new_feature_success():
     # Arrange
     service = MyService()
-    
+
     # Act & Assert
     with pytest.raises(NotImplementedError):
         service.new_feature()

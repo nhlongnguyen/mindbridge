@@ -232,7 +232,7 @@ poetry run pytest -n auto
 
 Each test module follows the mandatory pattern:
 - **Expected Use Case**: Normal operation with valid inputs
-- **Edge Case**: Boundary conditions, empty inputs, maximum limits  
+- **Edge Case**: Boundary conditions, empty inputs, maximum limits
 - **Failure Case**: Invalid inputs, error conditions, exception handling
 
 Example:
@@ -241,11 +241,11 @@ class TestDocumentProcessor:
     def test_process_document_success(self):
         """Expected use case: Process valid document successfully"""
         # Test implementation
-        
+
     def test_process_empty_document(self):
         """Edge case: Handle empty document"""
         # Test implementation
-        
+
     def test_process_document_embedding_failure(self):
         """Failure case: Handle embedding service failure"""
         # Test implementation
@@ -302,7 +302,7 @@ curl http://localhost:8000/health
 # Database connectivity
 curl http://localhost:8000/health/db
 
-# Redis connectivity  
+# Redis connectivity
 curl http://localhost:8000/health/redis
 
 # Detailed system metrics
