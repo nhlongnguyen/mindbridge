@@ -48,14 +48,14 @@ class VectorDocument(Base):
     @validates("embedding")
     def _validate_embedding(self, key: str, value: list[float]) -> list[float]:
         """Validate embedding field.
-        
+
         Args:
             key: Field name
             value: Embedding vector value
-            
+
         Returns:
             Validated embedding vector
-            
+
         Raises:
             ValueError: If embedding is invalid
         """
@@ -63,7 +63,7 @@ class VectorDocument(Base):
             raise ValueError("Embedding must be a list of floats")
         if len(value) != 1536:
             raise ValueError(f"Embedding must be exactly 1536 dimensions, got {len(value)}")
-        if not all(isinstance(x, (int, float)) for x in value):
+        if not all(isinstance(x, int | float) for x in value):
             raise ValueError("All embedding values must be numbers")
         return value
 
