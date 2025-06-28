@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import select, text
+from sqlalchemy import select, literal_column, bindparam
 from sqlalchemy.exc import SQLAlchemyError
 
 from .connection import DatabaseEngine
@@ -70,12 +70,12 @@ class DatabaseHealthChecker:
         try:
             async with self._database_engine.get_session() as session:
                 # Check if pgvector extension exists
-                extension_query = text("""
-                    SELECT extname, extversion
-                    FROM pg_extension
-                    WHERE extname = 'vector'
-                """)
-                extension_result = await session.execute(extension_query)
+                extension_query = (
+                    select(literal_column("extname"), literal_column("extversion"))
+                    .select_from(literal_column("pg_extension"))
+                    .where(literal_column("extname") == bindparam("ext_name"))
+                )
+                extension_result = await session.execute(extension_query, {"ext_name": "vector"})
                 extension_row = extension_result.fetchone()
 
                 if extension_row:
@@ -85,9 +85,9 @@ class DatabaseHealthChecker:
                     }
 
                     # Test vector operations
-                    vector_test_query = text("""
-                        SELECT '[1,2,3]'::vector <-> '[4,5,6]'::vector as distance
-                    """)
+                    vector_test_query = select(
+                        (literal_column("'[1,2,3]'::vector") <-> literal_column("'[4,5,6]'::vector")).label("distance")
+                    )
                     vector_result = await session.execute(vector_test_query)
                     distance = vector_result.scalar()
 

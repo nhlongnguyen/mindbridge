@@ -5,7 +5,7 @@ from datetime import datetime
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import DateTime, String, Text, func
 from sqlalchemy.ext.asyncio import AsyncAttrs
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, validates
 
 
 class Base(AsyncAttrs, DeclarativeBase):
@@ -44,6 +44,28 @@ class VectorDocument(Base):
         onupdate=func.now(),
         nullable=False
     )
+
+    @validates("embedding")
+    def _validate_embedding(self, key: str, value: list[float]) -> list[float]:
+        """Validate embedding field.
+        
+        Args:
+            key: Field name
+            value: Embedding vector value
+            
+        Returns:
+            Validated embedding vector
+            
+        Raises:
+            ValueError: If embedding is invalid
+        """
+        if not isinstance(value, list):
+            raise ValueError("Embedding must be a list of floats")
+        if len(value) != 1536:
+            raise ValueError(f"Embedding must be exactly 1536 dimensions, got {len(value)}")
+        if not all(isinstance(x, (int, float)) for x in value):
+            raise ValueError("All embedding values must be numbers")
+        return value
 
     def __repr__(self) -> str:
         """String representation of VectorDocument."""

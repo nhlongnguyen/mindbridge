@@ -10,7 +10,6 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
-from sqlalchemy.pool import QueuePool
 
 
 class DatabaseEngine:
@@ -54,7 +53,6 @@ class DatabaseEngine:
         if self._engine is None:
             self._engine = create_async_engine(
                 self._database_url,
-                poolclass=QueuePool,
                 pool_size=self._pool_size,
                 max_overflow=self._max_overflow,
                 pool_timeout=self._pool_timeout,
