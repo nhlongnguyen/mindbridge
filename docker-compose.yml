@@ -1,0 +1,97 @@
+version: '3.8'
+
+services:
+  # Main application
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-mindbridge}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-mindbridge}
+      - REDIS_URL=redis://redis:6379/0
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./src:/app/src
+    networks:
+      - mindbridge-network
+
+  # Celery worker
+  worker:
+    build: .
+    command: celery -A mindbridge.celery worker --loglevel=info
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-mindbridge}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-mindbridge}
+      - REDIS_URL=redis://redis:6379/0
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./src:/app/src
+    networks:
+      - mindbridge-network
+
+  # Celery beat scheduler
+  beat:
+    build: .
+    command: celery -A mindbridge.celery beat --loglevel=info
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-mindbridge}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-mindbridge}
+      - REDIS_URL=redis://redis:6379/0
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./src:/app/src
+    networks:
+      - mindbridge-network
+
+  # PostgreSQL with pgvector
+  postgres:
+    image: pgvector/pgvector:pg15
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-mindbridge}
+      - POSTGRES_USER=${POSTGRES_USER:-mindbridge}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - mindbridge-network
+
+  # Redis for caching and job queue
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - mindbridge-network
+
+  # Optional: Redis Insight for debugging
+  redis-insight:
+    image: redislabs/redisinsight:latest
+    ports:
+      - "8001:8001"
+    depends_on:
+      - redis
+    networks:
+      - mindbridge-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  mindbridge-network:
+    driver: bridge
