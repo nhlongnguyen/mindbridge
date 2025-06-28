@@ -367,9 +367,10 @@ def analyze_repository(
 7. **TDD Implementation**: Write tests first, then implement functionality
 8. **Quality Gates**: Ensure all tests pass and linting rules are satisfied
 9. **Commit Changes**: Stage and commit all changes with descriptive commit message
-10. **Create Pull Request**: Push branch and create PR with detailed description linking to issue
-11. **Update Task Status to "In Review"**: Mark GitHub project task as "in review" using GitHub CLI
-12. **Status Updates**: Update GitHub issue status throughout development
+10. **Post Subtask Completion**: After completing each individual subtask listed in the issue description, post a comment to the GitHub issue with completion summary
+11. **Create Pull Request**: Push branch and create PR with detailed description linking to issue
+12. **Update Task Status to "In Review"**: Mark GitHub project task as "in review" using GitHub CLI
+13. **Status Updates**: Update GitHub issue status throughout development
 
 ### GitHub Project Status Management Commands
 
@@ -420,6 +421,48 @@ gh project item-edit \
 - **In Review**: `aba860b9`
 - **Done**: `98236657`
 
+### Subtask Completion Tracking Commands
+
+**Post Subtask Completion Comment (After Each Individual Subtask):**
+```bash
+# Post completion comment for a specific subtask
+gh issue comment ISSUE_NUMBER --body "## ✅ Subtask Completed: [Subtask Name]
+
+### Summary
+Brief description of what was implemented for this subtask.
+
+### Changes Made
+- List of specific changes
+- Files modified/created
+- Tests added/updated
+
+### Next Steps
+- Reference to next subtask (if any)
+- Any dependencies or blockers identified
+
+---
+*Subtask checkpoint posted automatically via Claude Code workflow*"
+
+# Example usage:
+gh issue comment 42 --body "## ✅ Subtask Completed: Database Schema Setup
+
+### Summary
+Implemented PostgreSQL database schema with pgvector extension for vector storage.
+
+### Changes Made
+- Created database models in src/mindbridge/database/models.py
+- Added Alembic migration files
+- Updated database configuration in src/mindbridge/config.py
+- Added unit tests for model validation
+
+### Next Steps
+- Proceeding to Redis cache implementation
+- No blockers identified
+
+---
+*Subtask checkpoint posted automatically via Claude Code workflow*"
+```
+
 ### Implementation Workflow
 
 **Workflow Diagram:**
@@ -445,10 +488,13 @@ flowchart TD
     N --> L
     M -->|Yes| O[Stage & Commit Changes]
 
-    O --> P[Push Branch]
-    P --> Q[Create Pull Request]
-    Q --> R[Update Project Status to 'In Review']
-    R --> S[Update GitHub Issue Status]
+    O --> P[Post Subtask Completion Comment]
+    P --> Q{More Subtasks?}
+    Q -->|Yes| G
+    Q -->|No| R[Push Branch]
+    R --> S[Create Pull Request]
+    S --> T[Update Project Status to 'In Review']
+    T --> U[Update GitHub Issue Status]
 
     style I fill:#e1f5fe
     style J fill:#fff3e0
@@ -457,8 +503,10 @@ flowchart TD
     style M fill:#fff3e0
     style N fill:#ffebee
     style O fill:#e8f5e8
+    style P fill:#e8f5e8
+    style Q fill:#fff3e0
     style F fill:#fff8dc
-    style R fill:#f0e68c
+    style T fill:#f0e68c
 
     subgraph "Quality Gates Loop"
         I
@@ -469,6 +517,20 @@ flowchart TD
         N
     end
 
+    subgraph "Subtask Loop"
+        G
+        H
+        I
+        J
+        K
+        L
+        M
+        N
+        O
+        P
+        Q
+    end
+
     subgraph "Test Commands"
         T1["python3 -m poetry run pytest tests/ --cov=src --cov-report=html"]
     end
@@ -477,15 +539,17 @@ flowchart TD
         P1["python3 -m poetry run pre-commit run --all-files"]
     end
 
-    subgraph "GitHub Project Status Commands"
+    subgraph "GitHub Commands"
         F1["gh project item-edit --id TASK_ID --field-id STATUS_FIELD --single-select-option-id IN_PROGRESS"]
-        R1["gh project item-edit --id TASK_ID --field-id STATUS_FIELD --single-select-option-id IN_REVIEW"]
+        T1_CMD["gh project item-edit --id TASK_ID --field-id STATUS_FIELD --single-select-option-id IN_REVIEW"]
+        P1_CMD["gh issue comment ISSUE_NUMBER --body 'Subtask completed: [summary]'"]
     end
 
     I -.-> T1
     L -.-> P1
     F -.-> F1
-    R -.-> R1
+    T -.-> T1_CMD
+    P -.-> P1_CMD
 ```
 
 **Phase 1: Task Analysis and Planning**

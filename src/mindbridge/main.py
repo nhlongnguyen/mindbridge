@@ -1,8 +1,9 @@
 """Main FastAPI application."""
 
 import os
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator, Dict, Any
+from typing import Any
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -15,31 +16,31 @@ from mindbridge.observability.tracing import configure_tracing
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan manager for startup and shutdown events.
-    
+
     Args:
-        app: FastAPI application instance.
-        
+        _app: FastAPI application instance (unused).
+
     Yields:
         None during application runtime.
     """
     logger = get_logger(__name__)
-    
+
     # Startup
     logger.info("Starting Mindbridge application")
-    
+
     # Configure observability
     configure_logging(
         log_level=os.getenv("LOG_LEVEL", "INFO"),
-        log_format=os.getenv("LOG_FORMAT", "console")
+        log_format=os.getenv("LOG_FORMAT", "console"),
     )
     configure_tracing(service_name="mindbridge")
-    
+
     logger.info("Observability configured")
-    
+
     yield
-    
+
     # Shutdown
     logger.info("Shutting down Mindbridge application")
 
@@ -49,7 +50,7 @@ app = FastAPI(
     title="Mindbridge",
     description="Agentic RAG Documentation System",
     version="0.1.0",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 # Configure CORS
@@ -70,18 +71,18 @@ app.include_router(metrics_router)
 
 
 @app.get("/", tags=["root"])
-async def root() -> Dict[str, Any]:
+async def root() -> dict[str, Any]:
     """Root endpoint providing API information.
-    
+
     Returns:
         API information including name, version, and description.
     """
     logger = get_logger(__name__)
     logger.info("Root endpoint accessed")
-    
+
     return {
         "name": "Mindbridge",
         "version": "0.1.0",
         "description": "Agentic RAG Documentation System",
-        "status": "running"
+        "status": "running",
     }

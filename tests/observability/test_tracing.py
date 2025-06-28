@@ -1,10 +1,8 @@
 """Tests for OpenTelemetry tracing setup."""
 
-import pytest
+from mindbridge.observability.tracing import configure_tracing, get_tracer
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
-
-from mindbridge.observability.tracing import configure_tracing, get_tracer
 
 
 class TestTracingConfiguration:
@@ -13,14 +11,14 @@ class TestTracingConfiguration:
     def test_configure_tracing_sets_tracer_provider(self) -> None:
         """Expected use case: configure_tracing should set up TracerProvider."""
         configure_tracing(service_name="test-service")
-        
+
         tracer_provider = trace.get_tracer_provider()
         assert isinstance(tracer_provider, TracerProvider)
 
     def test_configure_tracing_with_custom_service_name(self) -> None:
         """Expected use case: Should use provided service name in resource."""
         configure_tracing(service_name="custom-service")
-        
+
         tracer_provider = trace.get_tracer_provider()
         resource = tracer_provider.resource
         assert resource.attributes.get("service.name") == "custom-service"
@@ -28,7 +26,7 @@ class TestTracingConfiguration:
     def test_configure_tracing_with_default_service_name(self) -> None:
         """Expected use case: Should use default service name when none provided."""
         configure_tracing()
-        
+
         tracer_provider = trace.get_tracer_provider()
         resource = tracer_provider.resource
         assert resource.attributes.get("service.name") == "mindbridge"
@@ -37,7 +35,7 @@ class TestTracingConfiguration:
         """Expected use case: get_tracer should return a valid tracer."""
         configure_tracing()
         tracer = get_tracer(__name__)
-        
+
         assert tracer is not None
         assert hasattr(tracer, "start_span")
 
@@ -45,7 +43,7 @@ class TestTracingConfiguration:
         """Expected use case: Should be able to create and end spans."""
         configure_tracing()
         tracer = get_tracer(__name__)
-        
+
         with tracer.start_as_current_span("test-span") as span:
             assert span is not None
             assert span.is_recording()
@@ -58,7 +56,7 @@ class TestTracingEdgeCases:
     def test_configure_tracing_with_empty_service_name(self) -> None:
         """Edge case: Empty service name should use default."""
         configure_tracing(service_name="")
-        
+
         tracer_provider = trace.get_tracer_provider()
         resource = tracer_provider.resource
         assert resource.attributes.get("service.name") == "mindbridge"
@@ -67,7 +65,7 @@ class TestTracingEdgeCases:
         """Edge case: Multiple configuration calls should not fail."""
         configure_tracing(service_name="service1")
         configure_tracing(service_name="service2")
-        
+
         # Should not raise any exceptions
         tracer_provider = trace.get_tracer_provider()
         assert isinstance(tracer_provider, TracerProvider)
@@ -80,7 +78,7 @@ class TestTracingFailureCases:
         """Failure case: get_tracer without configuration should still work."""
         # Reset to default state
         trace.set_tracer_provider(trace.NoOpTracerProvider())
-        
+
         tracer = get_tracer(__name__)
         assert tracer is not None
         # Should be NoOp tracer when not configured

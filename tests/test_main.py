@@ -2,7 +2,6 @@
 
 import pytest
 from fastapi.testclient import TestClient
-
 from mindbridge.main import app
 
 
@@ -44,7 +43,7 @@ class TestHealthEndpoints:
         """Expected use case: Health check should return proper JSON format."""
         response = client.get("/health")
         data = response.json()
-        
+
         assert "status" in data
         assert "timestamp" in data
         assert "version" in data
@@ -53,14 +52,14 @@ class TestHealthEndpoints:
     def test_readiness_check_endpoint_exists(self, client: TestClient) -> None:
         """Expected use case: Readiness check endpoint should respond."""
         response = client.get("/ready")
-        # Should respond with either 200 (healthy) or 503 (unhealthy) 
+        # Should respond with either 200 (healthy) or 503 (unhealthy)
         assert response.status_code in [200, 503]
 
     def test_readiness_check_response_format(self, client: TestClient) -> None:
         """Expected use case: Readiness check should return proper JSON format."""
         response = client.get("/ready")
         data = response.json()
-        
+
         # Handle both success and error response formats
         if response.status_code == 200:
             assert "status" in data
@@ -113,7 +112,7 @@ class TestRootEndpoint:
         """Expected use case: Root endpoint should return API information."""
         response = client.get("/")
         data = response.json()
-        
+
         assert "name" in data
         assert "version" in data
         assert "description" in data
