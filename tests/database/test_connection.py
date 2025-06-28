@@ -222,8 +222,11 @@ class TestGlobalEngineManagement:
     def test_get_async_engine_missing_url_fails(self) -> None:
         """Failure case: Get async engine without DATABASE_URL should fail."""
         # Arrange
-        with patch.dict(os.environ, {}, clear=True), pytest.raises(
-            RuntimeError, match="DATABASE_URL environment variable is required"
+        with (
+            patch.dict(os.environ, {}, clear=True),
+            pytest.raises(
+                RuntimeError, match="DATABASE_URL environment variable is required"
+            ),
         ):
             get_async_engine()
 
