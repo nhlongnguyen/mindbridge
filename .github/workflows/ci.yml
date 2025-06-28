@@ -88,7 +88,7 @@ jobs:
       run: poetry run bandit -r src/
 
     - name: Run safety dependency check
-      run: poetry run safety check
+      run: poetry run safety scan --non-interactive
 
   tests:
     name: Test Suite
