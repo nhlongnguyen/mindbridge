@@ -111,9 +111,14 @@ class TestDatabaseEngine:
         """Expected use case: Get session should yield working session."""
         # Arrange
         mock_session = AsyncMock(spec=AsyncSession)
-        mock_factory = AsyncMock()
-        mock_factory.return_value.__aenter__.return_value = mock_session
-        mock_factory.return_value.__aexit__.return_value = None
+        
+        # Create a proper async context manager mock
+        mock_session_context = AsyncMock()
+        mock_session_context.__aenter__ = AsyncMock(return_value=mock_session)
+        mock_session_context.__aexit__ = AsyncMock(return_value=None)
+        
+        mock_factory = Mock()
+        mock_factory.return_value = mock_session_context
 
         mock_sessionmaker.return_value = mock_factory
         mock_create_engine.return_value = Mock(spec=AsyncEngine)
@@ -132,13 +137,15 @@ class TestDatabaseEngine:
         """Failure case: Session should rollback on exception."""
         # Arrange
         mock_session = AsyncMock(spec=AsyncSession)
-        mock_factory = AsyncMock()
+        
+        # Create a proper async context manager mock
+        mock_session_context = AsyncMock()
+        mock_session_context.__aenter__ = AsyncMock(return_value=mock_session)
+        mock_session_context.__aexit__ = AsyncMock(return_value=None)
+        
+        mock_factory = Mock()
+        mock_factory.return_value = mock_session_context
 
-        @asynccontextmanager
-        async def mock_session_context():
-            yield mock_session
-
-        mock_factory.return_value = mock_session_context()
         mock_sessionmaker.return_value = mock_factory
         mock_create_engine.return_value = Mock(spec=AsyncEngine)
 
@@ -212,6 +219,7 @@ class TestGlobalEngineManagement:
         "DB_MAX_OVERFLOW": "25",
         "DB_ECHO": "true"
     })
+    @patch('mindbridge.database.connection._database_engine', None)
     @patch('mindbridge.database.connection.DatabaseEngine')
     def test_get_async_engine_with_env_config(self, mock_db_engine_class: Mock) -> None:
         """Expected use case: Get async engine with environment variables."""
