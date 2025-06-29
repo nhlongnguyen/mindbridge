@@ -24,6 +24,17 @@ def upgrade() -> None:
     # Create pgvector extension
     op.execute("CREATE EXTENSION IF NOT EXISTS pgvector")
 
+    # Create enum types
+    op.execute(
+        "CREATE TYPE repositorystatus AS ENUM ('pending', 'cloning', 'processing', 'completed', 'failed')"
+    )
+    op.execute(
+        "CREATE TYPE jobstatus AS ENUM ('pending', 'running', 'completed', 'failed', 'cancelled')"
+    )
+    op.execute(
+        "CREATE TYPE jobtype AS ENUM ('clone', 'analysis', 'embedding', 'indexing', 'cleanup')"
+    )
+
     # Create repositories table
     op.create_table(
         "repositories",
@@ -35,7 +46,10 @@ def upgrade() -> None:
             "branch", sa.String(length=100), nullable=False, server_default="main"
         ),
         sa.Column(
-            "status", sa.String(length=50), nullable=False, server_default="pending"
+            "status",
+            sa.Enum("RepositoryStatus", name="repositorystatus"),
+            nullable=False,
+            server_default="pending",
         ),
         sa.Column(
             "created_at",
@@ -87,9 +101,12 @@ def upgrade() -> None:
     op.create_table(
         "jobs",
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
-        sa.Column("job_type", sa.String(length=100), nullable=False),
+        sa.Column("job_type", sa.Enum("JobType", name="jobtype"), nullable=False),
         sa.Column(
-            "status", sa.String(length=50), nullable=False, server_default="pending"
+            "status",
+            sa.Enum("JobStatus", name="jobstatus"),
+            nullable=False,
+            server_default="pending",
         ),
         sa.Column("params", sa.JSON(), nullable=True),
         sa.Column("result", sa.JSON(), nullable=True),
@@ -177,6 +194,18 @@ def upgrade() -> None:
         "ix_vector_documents_created_at", "vector_documents", ["created_at"]
     )
 
+    # Add composite indexes for common query patterns
+    op.create_index(
+        "ix_documents_repo_type", "documents", ["repository_id", "file_type"]
+    )
+    op.create_index("ix_jobs_repo_status", "jobs", ["repository_id", "status"])
+    op.create_index("ix_jobs_type_status", "jobs", ["job_type", "status"])
+    op.create_index(
+        "ix_vector_documents_repo_type",
+        "vector_documents",
+        ["repository_id", "document_type"],
+    )
+
     # Create HNSW index for vector similarity search performance
     op.create_index(
         "ix_vector_documents_embedding_hnsw",
@@ -186,11 +215,49 @@ def upgrade() -> None:
         postgresql_with={"m": 16, "ef_construction": 64},
     )
 
+    # Add database-level CHECK constraints for data validation
+    op.execute(
+        """
+        ALTER TABLE vector_documents
+        ADD CONSTRAINT check_embedding_dimensions
+        CHECK (array_length(embedding, 1) = 1536)
+    """
+    )
+
+    op.execute(
+        """
+        ALTER TABLE documents
+        ADD CONSTRAINT check_content_not_empty
+        CHECK (LENGTH(TRIM(content)) > 0)
+    """
+    )
+
+    op.execute(
+        """
+        ALTER TABLE repositories
+        ADD CONSTRAINT check_url_not_empty
+        CHECK (LENGTH(TRIM(url)) > 0)
+    """
+    )
+
 
 def downgrade() -> None:
     """Downgrade schema."""
+    # Drop CHECK constraints
+    op.execute("ALTER TABLE repositories DROP CONSTRAINT IF EXISTS check_url_not_empty")
+    op.execute(
+        "ALTER TABLE documents DROP CONSTRAINT IF EXISTS check_content_not_empty"
+    )
+    op.execute(
+        "ALTER TABLE vector_documents DROP CONSTRAINT IF EXISTS check_embedding_dimensions"
+    )
+
     # Drop indexes
     op.drop_index("ix_vector_documents_embedding_hnsw", "vector_documents")
+    op.drop_index("ix_vector_documents_repo_type", "vector_documents")
+    op.drop_index("ix_jobs_type_status", "jobs")
+    op.drop_index("ix_jobs_repo_status", "jobs")
+    op.drop_index("ix_documents_repo_type", "documents")
     op.drop_index("ix_vector_documents_created_at", "vector_documents")
     op.drop_index("ix_vector_documents_document_type", "vector_documents")
     op.drop_index("ix_vector_documents_document_id", "vector_documents")
@@ -218,3 +285,8 @@ def downgrade() -> None:
     op.drop_table("jobs")
     op.drop_table("documents")
     op.drop_table("repositories")
+
+    # Drop enum types
+    op.execute("DROP TYPE IF EXISTS jobtype")
+    op.execute("DROP TYPE IF EXISTS jobstatus")
+    op.execute("DROP TYPE IF EXISTS repositorystatus")
