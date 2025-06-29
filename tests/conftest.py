@@ -13,9 +13,12 @@ from httpx import AsyncClient
 os.environ.setdefault(
     "DATABASE_URL", "postgresql://test:test@localhost:5432/mindbridge_test"
 )
-os.environ.setdefault("REDIS_URL", "redis://localhost:6379/1")
+os.environ.setdefault("REDIS_URL", "redis://localhost:6379/0")
 os.environ.setdefault("JWT_SECRET_KEY", "test-secret-key")
 os.environ.setdefault("ENVIRONMENT", "test")
+os.environ.setdefault("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:8080")
+os.environ.setdefault("LOG_LEVEL", "INFO")
+os.environ.setdefault("OPENTELEMETRY_ENABLED", "false")
 
 
 @pytest.fixture(scope="session")
