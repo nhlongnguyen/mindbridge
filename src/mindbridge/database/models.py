@@ -1,11 +1,12 @@
 """Database models with pgvector support."""
 
+import enum
 import re
 from datetime import datetime
 from typing import Any
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import JSON, DateTime, ForeignKey, Index, String, Text, func
+from sqlalchemy import JSON, DateTime, Enum, ForeignKey, Index, String, Text, func
 from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.orm import (
     DeclarativeBase,
@@ -14,6 +15,36 @@ from sqlalchemy.orm import (
     relationship,
     validates,
 )
+
+
+class RepositoryStatus(enum.Enum):
+    """Repository status enumeration."""
+
+    PENDING = "pending"
+    CLONING = "cloning"
+    PROCESSING = "processing"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+
+class JobStatus(enum.Enum):
+    """Job status enumeration."""
+
+    PENDING = "pending"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+
+
+class JobType(enum.Enum):
+    """Job type enumeration."""
+
+    CLONE = "clone"
+    ANALYSIS = "analysis"
+    EMBEDDING = "embedding"
+    INDEXING = "indexing"
+    CLEANUP = "cleanup"
 
 
 class Base(AsyncAttrs, DeclarativeBase):
@@ -55,6 +86,10 @@ class VectorDocument(Base):
         onupdate=func.now(),
         nullable=False,
     )
+
+    # Relationships
+    repository: Mapped["Repository"] = relationship("Repository")
+    document: Mapped["Document"] = relationship("Document")
 
     @validates("embedding")  # type: ignore[misc]
     def _validate_embedding(self, key: str, value: Any) -> list[float]:
@@ -102,7 +137,9 @@ class Repository(Base):
     url: Mapped[str] = mapped_column(String(500), nullable=False, unique=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     branch: Mapped[str] = mapped_column(String(100), nullable=False, default="main")
-    status: Mapped[str] = mapped_column(String(50), nullable=False, default="pending")
+    status: Mapped[RepositoryStatus] = mapped_column(
+        Enum(RepositoryStatus), nullable=False, default=RepositoryStatus.PENDING
+    )
 
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(
@@ -117,10 +154,16 @@ class Repository(Base):
 
     # Relationships
     documents: Mapped[list["Document"]] = relationship(
-        "Document", back_populates="repository", cascade="all, delete-orphan"
+        "Document",
+        back_populates="repository",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
     )
     jobs: Mapped[list["Job"]] = relationship(
-        "Job", back_populates="repository", cascade="all, delete-orphan"
+        "Job",
+        back_populates="repository",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
     )
 
     @validates("url")  # type: ignore[misc]
@@ -152,7 +195,9 @@ class Repository(Base):
         return value
 
     @validates("status")  # type: ignore[misc]
-    def _validate_status(self, key: str, value: str) -> str:
+    def _validate_status(
+        self, key: str, value: RepositoryStatus | str
+    ) -> RepositoryStatus:
         """Validate repository status.
 
         Args:
@@ -165,9 +210,14 @@ class Repository(Base):
         Raises:
             ValueError: If status is invalid
         """
-        valid_statuses = ["pending", "cloning", "processing", "completed", "failed"]
-        if value not in valid_statuses:
-            raise ValueError(f"Status must be one of: {', '.join(valid_statuses)}")
+        if isinstance(value, str):
+            try:
+                return RepositoryStatus(value)
+            except ValueError as e:
+                valid_values = [status.value for status in RepositoryStatus]
+                raise ValueError(
+                    f"Status must be one of: {', '.join(valid_values)}"
+                ) from e
         return value
 
     def __repr__(self) -> str:
@@ -255,8 +305,10 @@ class Job(Base):
     __tablename__ = "jobs"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    job_type: Mapped[str] = mapped_column(String(100), nullable=False)
-    status: Mapped[str] = mapped_column(String(50), nullable=False, default="pending")
+    job_type: Mapped[JobType] = mapped_column(Enum(JobType), nullable=False)
+    status: Mapped[JobStatus] = mapped_column(
+        Enum(JobStatus), nullable=False, default=JobStatus.PENDING
+    )
     params: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
     result: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -287,7 +339,7 @@ class Job(Base):
     repository: Mapped["Repository"] = relationship("Repository", back_populates="jobs")
 
     @validates("status")  # type: ignore[misc]
-    def _validate_status(self, key: str, value: str) -> str:
+    def _validate_status(self, key: str, value: JobStatus | str) -> JobStatus:
         """Validate job status.
 
         Args:
@@ -300,13 +352,18 @@ class Job(Base):
         Raises:
             ValueError: If status is invalid
         """
-        valid_statuses = ["pending", "running", "completed", "failed", "cancelled"]
-        if value not in valid_statuses:
-            raise ValueError(f"Status must be one of: {', '.join(valid_statuses)}")
+        if isinstance(value, str):
+            try:
+                return JobStatus(value)
+            except ValueError as e:
+                valid_values = [status.value for status in JobStatus]
+                raise ValueError(
+                    f"Status must be one of: {', '.join(valid_values)}"
+                ) from e
         return value
 
     @validates("job_type")  # type: ignore[misc]
-    def _validate_job_type(self, key: str, value: str) -> str:
+    def _validate_job_type(self, key: str, value: JobType | str) -> JobType:
         """Validate job type.
 
         Args:
@@ -319,14 +376,21 @@ class Job(Base):
         Raises:
             ValueError: If job type is invalid
         """
-        valid_types = ["clone", "analysis", "embedding", "indexing", "cleanup"]
-        if value not in valid_types:
-            raise ValueError(f"Job type must be one of: {', '.join(valid_types)}")
+        if isinstance(value, str):
+            try:
+                return JobType(value)
+            except ValueError as e:
+                valid_values = [job_type.value for job_type in JobType]
+                raise ValueError(
+                    f"Job type must be one of: {', '.join(valid_values)}"
+                ) from e
         return value
 
     def __repr__(self) -> str:
         """String representation of Job."""
-        return f"<Job(id={self.id}, type='{self.job_type}', status='{self.status}')>"
+        job_type_value = self.job_type.value if self.job_type else None
+        status_value = self.status.value if self.status else None
+        return f"<Job(id={self.id}, type='{job_type_value}', status='{status_value}')>"
 
 
 # Create indexes for Job

@@ -21,6 +21,9 @@ depends_on: str | Sequence[str] | None = None
 
 def upgrade() -> None:
     """Upgrade schema."""
+    # Create pgvector extension
+    op.execute("CREATE EXTENSION IF NOT EXISTS pgvector")
+
     # Create repositories table
     op.create_table(
         "repositories",
@@ -71,8 +74,13 @@ def upgrade() -> None:
             server_default=sa.func.now(),
             nullable=False,
         ),
-        sa.ForeignKeyConstraint(["repository_id"], ["repositories.id"]),
+        sa.ForeignKeyConstraint(
+            ["repository_id"], ["repositories.id"], ondelete="CASCADE"
+        ),
         sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint(
+            "repository_id", "file_path", name="uq_document_repo_filepath"
+        ),
     )
 
     # Create jobs table
@@ -101,7 +109,9 @@ def upgrade() -> None:
         ),
         sa.Column("started_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("completed_at", sa.DateTime(timezone=True), nullable=True),
-        sa.ForeignKeyConstraint(["repository_id"], ["repositories.id"]),
+        sa.ForeignKeyConstraint(
+            ["repository_id"], ["repositories.id"], ondelete="CASCADE"
+        ),
         sa.PrimaryKeyConstraint("id"),
     )
 
@@ -129,8 +139,10 @@ def upgrade() -> None:
             server_default=sa.func.now(),
             nullable=False,
         ),
-        sa.ForeignKeyConstraint(["repository_id"], ["repositories.id"]),
-        sa.ForeignKeyConstraint(["document_id"], ["documents.id"]),
+        sa.ForeignKeyConstraint(
+            ["repository_id"], ["repositories.id"], ondelete="CASCADE"
+        ),
+        sa.ForeignKeyConstraint(["document_id"], ["documents.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
     )
 
@@ -165,10 +177,20 @@ def upgrade() -> None:
         "ix_vector_documents_created_at", "vector_documents", ["created_at"]
     )
 
+    # Create HNSW index for vector similarity search performance
+    op.create_index(
+        "ix_vector_documents_embedding_hnsw",
+        "vector_documents",
+        ["embedding"],
+        postgresql_using="hnsw",
+        postgresql_with={"m": 16, "ef_construction": 64},
+    )
+
 
 def downgrade() -> None:
     """Downgrade schema."""
     # Drop indexes
+    op.drop_index("ix_vector_documents_embedding_hnsw", "vector_documents")
     op.drop_index("ix_vector_documents_created_at", "vector_documents")
     op.drop_index("ix_vector_documents_document_type", "vector_documents")
     op.drop_index("ix_vector_documents_document_id", "vector_documents")

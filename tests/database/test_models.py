@@ -1,7 +1,14 @@
 """Tests for database models."""
 
 import pytest
-from mindbridge.database.models import Base, Document, Job, Repository, VectorDocument
+from mindbridge.database.models import (
+    Base,
+    Document,
+    Job,
+    JobType,
+    Repository,
+    VectorDocument,
+)
 
 
 class TestVectorDocument:
@@ -354,7 +361,7 @@ class TestJob:
 
         # Assert
         assert job.repository_id == repository_id
-        assert job.job_type == job_type
+        assert job.job_type == JobType(job_type)
         assert job.params == params
         assert job.id is None  # Not yet persisted
         assert (
@@ -376,7 +383,7 @@ class TestJob:
 
         # Assert
         assert job.repository_id == repository_id
-        assert job.job_type == job_type
+        assert job.job_type == JobType(job_type)
         assert job.params is None
         assert (
             job.status is None or job.status == "pending"
