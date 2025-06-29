@@ -189,6 +189,68 @@ class TestDocumentProcessor:
 - Use temporary databases for integration tests
 - Clean up resources in test teardown
 
+### Testing Anti-Patterns to Avoid
+
+**Framework Anti-Patterns:**
+- **Avoid**: Using multiple testing frameworks simultaneously (pytest + unittest + nose)
+- **Avoid**: Mixing assertion styles (assert vs self.assertEqual vs expect)
+- **Avoid**: Custom test runners without clear justification
+- **Avoid**: Testing framework-specific features that reduce portability
+
+**Test Structure Anti-Patterns:**
+- **Avoid**: Mega tests that test multiple unrelated behaviors
+- **Avoid**: Tests that depend on execution order (use proper isolation)
+- **Avoid**: Tests that rely on external state or services without proper mocking
+- **Avoid**: Tests with unclear or misleading names (test_1, test_stuff, test_everything)
+
+**Mocking Anti-Patterns:**
+- **Avoid**: Over-mocking internal implementation details
+- **Avoid**: Mocking the system under test itself
+- **Avoid**: Tests that mock everything and test nothing
+- **Avoid**: Shared mocks across unrelated test cases
+
+**Data Management Anti-Patterns:**
+- **Avoid**: Tests that create permanent data or side effects
+- **Avoid**: Hard-coded test data that becomes brittle over time
+- **Avoid**: Tests that share mutable test data without proper cleanup
+- **Avoid**: Database tests that don't use transactions or proper isolation
+
+**Performance Anti-Patterns:**
+- **Avoid**: Tests that make real network calls without necessity
+- **Avoid**: Tests that sleep or use arbitrary timeouts
+- **Avoid**: Tests that test performance characteristics without proper benchmarking setup
+- **Avoid**: Integration tests that could be unit tests (over-testing)
+
+**Encapsulation Anti-Patterns:**
+- **Avoid**: Testing private methods directly (test through public interface instead)
+- **Avoid**: Accessing private attributes in tests (use public properties/methods)
+- **Avoid**: Testing implementation details rather than behavior contracts
+- **Avoid**: Tests that break when internal refactoring occurs
+
+**Assertion Anti-Patterns:**
+- **Avoid**: Tests with no assertions (they don't verify anything)
+- **Avoid**: Too many assertions in a single test (violates single responsibility)
+- **Avoid**: Assertions that don't relate to the test name or purpose
+- **Avoid**: Vague assertions that don't provide meaningful failure messages
+
+**Test Organization Anti-Patterns:**
+- **Avoid**: Tests that don't follow AAA (Arrange, Act, Assert) pattern
+- **Avoid**: Business logic tests mixed with presentation layer tests
+- **Avoid**: Duplicate test setup code without proper abstraction (use fixtures/factories)
+- **Avoid**: Tests placed in incorrect test categories (unit tests that are actually integration tests)
+
+**Coverage Anti-Patterns:**
+- **Avoid**: Writing tests solely to increase coverage metrics without testing behavior
+- **Avoid**: Focusing only on line coverage while ignoring branch coverage
+- **Avoid**: Gaming coverage metrics with meaningless tests
+- **Avoid**: Using coverage as the only quality metric for test suites
+
+**Async/Concurrency Anti-Patterns:**
+- **Avoid**: Testing async code synchronously (missing async/await patterns)
+- **Avoid**: Tests with race conditions or timing dependencies
+- **Avoid**: Blocking async tests that defeat the purpose of async code
+- **Avoid**: Not testing concurrent access patterns for shared resources
+
 ---
 
 ## Code Style and Linting
