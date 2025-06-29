@@ -393,7 +393,6 @@ temp_processing/
 
 # Cache directories
 .cache/
-cache/
 __cache__/
 
 # Local environment configuration

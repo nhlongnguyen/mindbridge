@@ -6,3 +6,5 @@ vector-based semantic search with graph database relationships.
 
 __version__ = "0.1.0"
 __author__ = "Mindbridge Team"
+
+# Import submodules to make them accessible

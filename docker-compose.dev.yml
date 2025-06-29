@@ -1,0 +1,67 @@
+# Docker Compose for Local Development Services Only
+# This file provides just PostgreSQL and Redis for local development
+# Run with: docker-compose -f docker-compose.dev.yml up -d
+
+version: '3.8'
+
+services:
+  # PostgreSQL with pgvector for local development
+  postgres:
+    image: pgvector/pgvector:pg15
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-mindbridge}
+      - POSTGRES_USER=${POSTGRES_USER:-mindbridge}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-dev-password-123}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mindbridge}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mindbridge-dev
+
+  # Redis for caching and job queue (local development)
+  redis:
+    image: redis:7-alpine
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-dev-redis-password}
+    command: >
+      sh -c '
+        mkdir -p /usr/local/etc/redis &&
+        echo "requirepass $${REDIS_PASSWORD}" > /usr/local/etc/redis/redis.conf &&
+        redis-server /usr/local/etc/redis/redis.conf
+      '
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_dev_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-dev-redis-password}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mindbridge-dev
+
+  # Redis Insight for development debugging
+  redis-insight:
+    image: redislabs/redisinsight:latest
+    ports:
+      - "8001:8001"
+    depends_on:
+      - redis
+    networks:
+      - mindbridge-dev
+
+volumes:
+  postgres_dev_data:
+  redis_dev_data:
+
+networks:
+  mindbridge-dev:
+    driver: bridge

@@ -99,9 +99,43 @@ jobs:
 
     - name: Run tests with coverage
       env:
+        # Database Configuration
         DATABASE_URL: postgresql://postgres:${{ secrets.TEST_DB_PASSWORD || 'testpassword' }}@localhost:5432/mindbridge_test
+
+        # Redis Configuration
         REDIS_URL: redis://localhost:6379/0
+
+        # JWT Configuration
         JWT_SECRET_KEY: ${{ secrets.TEST_JWT_SECRET || 'test-secret-key-for-ci' }}
+        JWT_ALGORITHM: HS256
+        JWT_EXPIRE_MINUTES: 30
+
+        # Application Configuration
+        ENVIRONMENT: test
+        DEBUG: false
+        LOG_LEVEL: INFO
+
+        # Embedding Model Configuration
+        EMBEDDING_MODEL: sentence-transformers/all-MiniLM-L6-v2
+        EMBEDDING_DIMENSION: 384
+
+        # Celery Configuration
+        CELERY_BROKER_URL: redis://localhost:6379/0
+        CELERY_RESULT_BACKEND: redis://localhost:6379/0
+
+        # API Configuration
+        API_V1_PREFIX: /api/v1
+        API_TITLE: Mindbridge API
+        API_VERSION: 0.1.0
+
+        # Security Configuration
+        ALLOWED_HOSTS: localhost,127.0.0.1
+        ALLOWED_ORIGINS: "http://localhost:3000,http://localhost:8080"
+
+        # Monitoring Configuration
+        OPENTELEMETRY_ENABLED: false
+        OTEL_SERVICE_NAME: mindbridge
+        OTEL_EXPORTER_OTLP_ENDPOINT: http://localhost:4317
       run: poetry run pytest --cov-report=xml
 
     - name: Upload coverage to Codecov
