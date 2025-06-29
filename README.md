@@ -1,7 +1,7 @@
 # MindBridge: Agentic RAG Documentation System
 
-[![CI/CD Pipeline](https://github.com/user/mindbridge/workflows/CI/badge.svg)](https://github.com/user/mindbridge/actions)
-[![Code Coverage](https://codecov.io/gh/user/mindbridge/branch/main/graph/badge.svg)](https://codecov.io/gh/user/mindbridge)
+[![CI/CD Pipeline](https://github.com/nhlongnguyen/mindbridge/workflows/CI%2FCD%20Pipeline/badge.svg)](https://github.com/nhlongnguyen/mindbridge/actions)
+[![Code Coverage](https://codecov.io/gh/nhlongnguyen/mindbridge/branch/main/graph/badge.svg)](https://codecov.io/gh/nhlongnguyen/mindbridge)
 [![Python Version](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
