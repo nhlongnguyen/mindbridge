@@ -97,6 +97,19 @@ jobs:
     - name: Install dependencies
       run: poetry install --with dev,test
 
+    - name: Run Database Migrations
+      env:
+        DATABASE_URL: postgresql://postgres:${{ secrets.TEST_DB_PASSWORD || 'testpassword' }}@localhost:5432/mindbridge_test
+        ALLOWED_ORIGINS: "http://localhost:3000,http://localhost:8080"
+        ENVIRONMENT: test
+        LOG_LEVEL: INFO
+      run: |
+        echo "🗄️ Running database migrations..."
+        poetry run alembic upgrade head
+        echo "✅ Verifying migration status..."
+        poetry run alembic current
+        echo "🎉 Database migrations completed successfully!"
+
     - name: Run tests with coverage
       env:
         # Database Configuration
