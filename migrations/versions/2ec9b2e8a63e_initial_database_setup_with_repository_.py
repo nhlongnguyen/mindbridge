@@ -22,18 +22,7 @@ depends_on: str | Sequence[str] | None = None
 def upgrade() -> None:
     """Upgrade schema."""
     # Create pgvector extension
-    op.execute("CREATE EXTENSION IF NOT EXISTS pgvector")
-
-    # Create enum types
-    op.execute(
-        "CREATE TYPE repositorystatus AS ENUM ('pending', 'cloning', 'processing', 'completed', 'failed')"
-    )
-    op.execute(
-        "CREATE TYPE jobstatus AS ENUM ('pending', 'running', 'completed', 'failed', 'cancelled')"
-    )
-    op.execute(
-        "CREATE TYPE jobtype AS ENUM ('clone', 'analysis', 'embedding', 'indexing', 'cleanup')"
-    )
+    op.execute("CREATE EXTENSION IF NOT EXISTS vector")
 
     # Create repositories table
     op.create_table(
@@ -47,7 +36,14 @@ def upgrade() -> None:
         ),
         sa.Column(
             "status",
-            sa.Enum("RepositoryStatus", name="repositorystatus"),
+            sa.Enum(
+                "pending",
+                "cloning",
+                "processing",
+                "completed",
+                "failed",
+                name="repositorystatus",
+            ),
             nullable=False,
             server_default="pending",
         ),
@@ -101,10 +97,23 @@ def upgrade() -> None:
     op.create_table(
         "jobs",
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
-        sa.Column("job_type", sa.Enum("JobType", name="jobtype"), nullable=False),
+        sa.Column(
+            "job_type",
+            sa.Enum(
+                "clone", "analysis", "embedding", "indexing", "cleanup", name="jobtype"
+            ),
+            nullable=False,
+        ),
         sa.Column(
             "status",
-            sa.Enum("JobStatus", name="jobstatus"),
+            sa.Enum(
+                "pending",
+                "running",
+                "completed",
+                "failed",
+                "cancelled",
+                name="jobstatus",
+            ),
             nullable=False,
             server_default="pending",
         ),
@@ -207,12 +216,13 @@ def upgrade() -> None:
     )
 
     # Create HNSW index for vector similarity search performance
-    op.create_index(
-        "ix_vector_documents_embedding_hnsw",
-        "vector_documents",
-        ["embedding"],
-        postgresql_using="hnsw",
-        postgresql_with={"m": 16, "ef_construction": 64},
+    op.execute(
+        """
+        CREATE INDEX ix_vector_documents_embedding_hnsw
+        ON vector_documents
+        USING hnsw (embedding vector_cosine_ops)
+        WITH (m = 16, ef_construction = 64)
+    """
     )
 
     # Add database-level CHECK constraints for data validation
@@ -220,7 +230,7 @@ def upgrade() -> None:
         """
         ALTER TABLE vector_documents
         ADD CONSTRAINT check_embedding_dimensions
-        CHECK (array_length(embedding, 1) = 1536)
+        CHECK (vector_dims(embedding) = 1536)
     """
     )
 
@@ -286,7 +296,4 @@ def downgrade() -> None:
     op.drop_table("documents")
     op.drop_table("repositories")
 
-    # Drop enum types
-    op.execute("DROP TYPE IF EXISTS jobtype")
-    op.execute("DROP TYPE IF EXISTS jobstatus")
-    op.execute("DROP TYPE IF EXISTS repositorystatus")
+    # Note: Enum types will be dropped automatically when tables are dropped

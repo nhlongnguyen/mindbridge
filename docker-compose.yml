@@ -12,13 +12,26 @@ services:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
       - ENVIRONMENT=${ENVIRONMENT:-development}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:8080}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - PYTHONPATH=/app/src
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     volumes:
       - ./src:/app/src
+      - ./migrations:/app/migrations
+      - ./alembic.ini:/app/alembic.ini
     networks:
       - mindbridge-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   # Celery worker
   worker:
@@ -68,14 +81,26 @@ services:
       - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
     networks:
       - mindbridge-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mindbridge} -d ${POSTGRES_DB:-mindbridge}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   # Redis for caching and job queue
   redis:
     image: redis:7-alpine
-    command: redis-server /usr/local/etc/redis/redis.conf
+    command: >
+      sh -c '
+        mkdir -p /usr/local/etc/redis &&
+        echo "requirepass $${REDIS_PASSWORD}" > /usr/local/etc/redis/redis.conf &&
+        echo "maxmemory 256mb" >> /usr/local/etc/redis/redis.conf &&
+        echo "maxmemory-policy allkeys-lru" >> /usr/local/etc/redis/redis.conf &&
+        redis-server /usr/local/etc/redis/redis.conf
+      '
     volumes:
       - redis_data:/data
-      - ./config/redis.conf:/usr/local/etc/redis/redis.conf:ro
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
     networks:
@@ -83,10 +108,10 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
-      interval: 30s
-      timeout: 10s
+      interval: 10s
+      timeout: 5s
       retries: 3
-      start_period: 40s
+      start_period: 20s
 
   # Optional: Redis Insight for debugging
   redis-insight:

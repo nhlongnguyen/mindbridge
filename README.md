@@ -60,11 +60,144 @@ graph TB
 git clone https://github.com/nhlongnguyen/mindbridge.git
 cd mindbridge
 
-# Start all services
-docker-compose up -d
+# Start all services using the automated setup script
+./scripts/docker-setup.sh
+
+# Or manually start services
+docker-compose --env-file .env.docker up -d
 
 # Check service health
 curl http://localhost:8000/health
+```
+
+### Complete Docker Setup
+
+The project includes a comprehensive Docker setup with production-ready configurations:
+
+#### 🚀 **Automated Setup Script**
+
+```bash
+# One-command setup (recommended)
+./scripts/docker-setup.sh
+```
+
+This script will:
+- Build all Docker images
+- Start PostgreSQL and Redis services
+- Run database migrations with all enhancements
+- Start the full application stack
+- Verify all services are healthy
+
+#### 🐳 **Manual Docker Setup**
+
+```bash
+# 1. Build and start database services
+docker-compose --env-file .env.docker up -d postgres redis
+
+# 2. Wait for services to be healthy
+docker-compose --env-file .env.docker logs postgres
+docker-compose --env-file .env.docker logs redis
+
+# 3. Run database migrations (includes pgvector, HNSW indexes, constraints)
+docker-compose --env-file .env.docker run --rm -e PYTHONPATH=/app/src app alembic upgrade head
+
+# 4. Start the full application stack
+docker-compose --env-file .env.docker up -d
+
+# 5. Verify all services
+docker-compose --env-file .env.docker ps
+curl http://localhost:8000/health
+```
+
+#### 📊 **Docker Services**
+
+| Service | Port | Description |
+|---------|------|-------------|
+| **API Server** | 8000 | FastAPI application with health checks |
+| **PostgreSQL** | 5432 | Database with pgvector extension |
+| **Redis** | 6379 | Cache and job queue |
+| **Redis Insight** | 8001 | Redis management interface |
+| **Celery Worker** | - | Background job processing |
+| **Celery Beat** | - | Scheduled task management |
+
+#### 🗄️ **Enhanced Database Features**
+
+The Docker setup includes all performance and data integrity enhancements:
+
+✅ **PostgreSQL with pgvector** - Vector similarity search
+✅ **HNSW Indexing** - 100-1000x faster vector queries
+✅ **Composite Indexes** - Query optimization
+✅ **CHECK Constraints** - Database-level validation
+✅ **Cascade Deletes** - Data integrity
+✅ **Enum Types** - Type safety
+
+#### 🔧 **Environment Configuration**
+
+The Docker setup uses `.env.docker` for configuration:
+
+```bash
+# Database Configuration
+POSTGRES_DB=mindbridge
+POSTGRES_USER=mindbridge
+POSTGRES_PASSWORD=docker-dev-password-123
+
+# Redis Configuration
+REDIS_PASSWORD=docker-redis-password-123
+
+# Application Configuration
+JWT_SECRET_KEY=docker-development-secret-key-256-bits-long
+ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8080,http://localhost:8000
+```
+
+#### 🔍 **Docker Management Commands**
+
+```bash
+# View service status
+docker-compose --env-file .env.docker ps
+
+# View service logs
+docker-compose --env-file .env.docker logs -f app
+docker-compose --env-file .env.docker logs -f postgres
+docker-compose --env-file .env.docker logs -f redis
+
+# Stop all services
+docker-compose --env-file .env.docker down
+
+# Reset database (removes all data)
+docker-compose --env-file .env.docker down -v
+
+# Run migrations manually
+docker-compose --env-file .env.docker run --rm app alembic upgrade head
+
+# Access database directly
+docker-compose --env-file .env.docker exec postgres psql -U mindbridge -d mindbridge
+
+# Test vector operations
+docker-compose --env-file .env.docker exec postgres psql -U mindbridge -d mindbridge -c "
+SELECT COUNT(*) as total_tables FROM information_schema.tables WHERE table_schema = 'public';
+SELECT indexname, indexdef FROM pg_indexes WHERE tablename = 'vector_documents';
+"
+```
+
+#### 🧪 **Docker Testing & Validation**
+
+```bash
+# Validate vector operations
+docker-compose --env-file .env.docker exec postgres psql -U mindbridge -d mindbridge -c "
+INSERT INTO vector_documents (content, title, embedding)
+VALUES ('Docker test content', 'Docker Test', ARRAY(SELECT random() FROM generate_series(1, 1536))::vector);
+
+SELECT id, title, vector_dims(embedding) as dimensions
+FROM vector_documents WHERE title = 'Docker Test';
+"
+
+# Test API endpoints
+curl http://localhost:8000/health
+curl http://localhost:8000/docs
+curl http://localhost:8000/metrics
+
+# Check Redis connectivity
+docker-compose --env-file .env.docker exec redis redis-cli -a docker-redis-password-123 ping
 ```
 
 ### Development Setup

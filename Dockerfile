@@ -1,5 +1,5 @@
 # Dockerfile for Mindbridge application
-FROM python:3.13-slim as builder
+FROM python:3.12-slim as builder
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
@@ -26,7 +26,7 @@ RUN poetry config virtualenvs.create false
 RUN poetry install --only=main --no-dev
 
 # Production stage
-FROM python:3.13-slim as production
+FROM python:3.12-slim as production
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
@@ -51,6 +51,8 @@ WORKDIR /app
 
 # Copy application code
 COPY src/ ./src/
+COPY migrations/ ./migrations/
+COPY alembic.ini ./
 COPY README.md ./
 
 # Change ownership to non-root user
@@ -67,4 +69,4 @@ HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
 # Default command
-CMD ["uvicorn", "mindbridge.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "src.mindbridge.main:app", "--host", "0.0.0.0", "--port", "8000"]

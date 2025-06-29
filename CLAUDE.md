@@ -841,6 +841,289 @@ LOG_LEVEL=INFO
 
 ---
 
+## Docker Deployment and Containerization
+
+### Complete Docker Setup
+
+The project includes a production-ready Docker Compose configuration with all services integrated and optimized for performance.
+
+#### 🚀 **Automated Setup Script (Recommended)**
+
+```bash
+# One-command complete setup
+./scripts/docker-setup.sh
+```
+
+This automated script performs:
+- Builds all Docker images with optimized caching
+- Starts PostgreSQL and Redis services with health checks
+- Runs database migrations with all enhancements (pgvector, HNSW indexes, constraints)
+- Starts the full application stack
+- Verifies all services are healthy and operational
+
+#### 🐳 **Manual Docker Setup Process**
+
+```bash
+# 1. Build and start database services first
+docker-compose --env-file .env.docker up -d postgres redis
+
+# 2. Wait for services to be healthy (check logs)
+docker-compose --env-file .env.docker logs postgres
+docker-compose --env-file .env.docker logs redis
+
+# 3. Run database migrations (includes all performance optimizations)
+docker-compose --env-file .env.docker run --rm -e PYTHONPATH=/app/src app alembic upgrade head
+
+# 4. Start the complete application stack
+docker-compose --env-file .env.docker up -d
+
+# 5. Verify all services are running and healthy
+docker-compose --env-file .env.docker ps
+curl http://localhost:8000/health
+```
+
+#### 📊 **Docker Services Architecture**
+
+| Service | Port | Purpose | Health Check |
+|---------|------|---------|--------------|
+| **API Application** | 8000 | FastAPI server with async processing | `/health` endpoint |
+| **PostgreSQL + pgvector** | 5432 | Database with vector operations | `pg_isready` |
+| **Redis** | 6379 | Cache and job queue | `PING` command |
+| **Redis Insight** | 8001 | Redis management interface | Web UI |
+| **Celery Worker** | - | Background job processing | Process monitoring |
+| **Celery Beat** | - | Scheduled task management | Process monitoring |
+
+#### 🔧 **Docker Environment Configuration**
+
+The Docker setup uses `.env.docker` for environment-specific configuration:
+
+```bash
+# Database Configuration
+POSTGRES_DB=mindbridge
+POSTGRES_USER=mindbridge
+POSTGRES_PASSWORD=docker-dev-password-123
+
+# Redis Configuration
+REDIS_PASSWORD=docker-redis-password-123
+
+# Application Configuration
+JWT_SECRET_KEY=docker-development-secret-key-256-bits-long
+ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8080,http://localhost:8000
+ENVIRONMENT=development
+LOG_LEVEL=INFO
+
+# Celery Configuration
+CELERY_BROKER_URL=redis://:docker-redis-password-123@redis:6379/0
+CELERY_RESULT_BACKEND=redis://:docker-redis-password-123@redis:6379/1
+```
+
+#### 🗄️ **Enhanced Database Features in Docker**
+
+The containerized setup includes all production-ready database optimizations:
+
+✅ **PostgreSQL 15 with pgvector Extension** - Vector similarity search capability
+✅ **HNSW Vector Indexing** - 100-1000x faster vector similarity queries
+✅ **Composite Database Indexes** - Optimized query performance for common patterns
+✅ **Database-Level CHECK Constraints** - Data validation and integrity
+✅ **Cascade Foreign Key Relationships** - Automatic cleanup and data consistency
+✅ **Proper Enum Types** - Type safety and validation
+✅ **Connection Pooling** - Efficient database connection management
+
+#### 🔍 **Docker Management Commands**
+
+**Service Management:**
+```bash
+# View service status and health
+docker-compose --env-file .env.docker ps
+
+# View real-time logs for specific services
+docker-compose --env-file .env.docker logs -f app
+docker-compose --env-file .env.docker logs -f postgres
+docker-compose --env-file .env.docker logs -f redis
+docker-compose --env-file .env.docker logs -f worker
+
+# Stop all services
+docker-compose --env-file .env.docker down
+
+# Stop services and remove volumes (CAUTION: This removes all data)
+docker-compose --env-file .env.docker down -v
+
+# Restart specific service
+docker-compose --env-file .env.docker restart app
+```
+
+**Database Operations:**
+```bash
+# Run database migrations manually
+docker-compose --env-file .env.docker run --rm app alembic upgrade head
+
+# Access PostgreSQL database directly
+docker-compose --env-file .env.docker exec postgres psql -U mindbridge -d mindbridge
+
+# Check database schema and indexes
+docker-compose --env-file .env.docker exec postgres psql -U mindbridge -d mindbridge -c "
+SELECT COUNT(*) as total_tables FROM information_schema.tables WHERE table_schema = 'public';
+SELECT indexname, indexdef FROM pg_indexes WHERE tablename = 'vector_documents';
+"
+
+# Backup database
+docker-compose --env-file .env.docker exec postgres pg_dump -U mindbridge -d mindbridge > backup.sql
+```
+
+**Redis Operations:**
+```bash
+# Check Redis connectivity and performance
+docker-compose --env-file .env.docker exec redis redis-cli -a docker-redis-password-123 ping
+docker-compose --env-file .env.docker exec redis redis-cli -a docker-redis-password-123 info memory
+
+# Monitor Redis operations
+docker-compose --env-file .env.docker exec redis redis-cli -a docker-redis-password-123 monitor
+
+# Check connected clients and slow queries
+docker-compose --env-file .env.docker exec redis redis-cli -a docker-redis-password-123 client list
+docker-compose --env-file .env.docker exec redis redis-cli -a docker-redis-password-123 slowlog get 10
+
+# Clear Redis cache (use with caution in development)
+docker-compose --env-file .env.docker exec redis redis-cli -a docker-redis-password-123 flushdb
+```
+
+#### 🧪 **Docker Testing and Validation**
+
+**API Testing:**
+```bash
+# Test all API endpoints
+curl http://localhost:8000/health        # Health check
+curl http://localhost:8000/docs          # Interactive API documentation
+curl http://localhost:8000/redoc         # Alternative API documentation
+curl http://localhost:8000/metrics       # Prometheus metrics
+
+# Test with verbose output
+curl -v http://localhost:8000/health
+```
+
+**Database Testing:**
+```bash
+# Validate vector operations in Docker
+docker-compose --env-file .env.docker exec postgres psql -U mindbridge -d mindbridge -c "
+-- Insert test vector document
+INSERT INTO vector_documents (content, title, embedding)
+VALUES ('Docker test content for vector operations', 'Docker Vector Test',
+        ARRAY(SELECT random() FROM generate_series(1, 1536))::vector);
+
+-- Verify vector dimensions and operations
+SELECT id, title, vector_dims(embedding) as dimensions
+FROM vector_documents WHERE title = 'Docker Vector Test';
+
+-- Test vector similarity search
+SELECT id, title, 1 - (embedding <=> (SELECT embedding FROM vector_documents LIMIT 1)) as similarity
+FROM vector_documents
+ORDER BY embedding <=> (SELECT embedding FROM vector_documents LIMIT 1)
+LIMIT 5;
+"
+
+# Clean up test data
+docker-compose --env-file .env.docker exec postgres psql -U mindbridge -d mindbridge -c "
+DELETE FROM vector_documents WHERE title = 'Docker Vector Test';
+"
+```
+
+**Performance Testing:**
+```bash
+# Load test API endpoints
+curl -w "@curl-format.txt" -s -o /dev/null http://localhost:8000/health
+
+# Monitor resource usage
+docker stats --no-stream
+docker-compose --env-file .env.docker exec postgres pg_stat_activity
+```
+
+#### 🔧 **Docker Troubleshooting**
+
+**Common Issues and Solutions:**
+
+**Issue: Services fail to start**
+```bash
+# Check service logs for errors
+docker-compose --env-file .env.docker logs postgres
+docker-compose --env-file .env.docker logs redis
+docker-compose --env-file .env.docker logs app
+
+# Restart problematic services
+docker-compose --env-file .env.docker restart postgres redis
+```
+
+**Issue: Database connection errors**
+```bash
+# Verify database is healthy
+docker-compose --env-file .env.docker exec postgres pg_isready -U mindbridge -d mindbridge
+
+# Check connection from app container
+docker-compose --env-file .env.docker exec app python -c "
+import asyncpg
+import asyncio
+async def test_db():
+    conn = await asyncpg.connect('postgresql://mindbridge:docker-dev-password-123@postgres:5432/mindbridge')
+    result = await conn.fetchval('SELECT version();')
+    print('Database connection successful:', result)
+    await conn.close()
+asyncio.run(test_db())
+"
+```
+
+**Issue: Redis connection errors**
+```bash
+# Test Redis connectivity from app container
+docker-compose --env-file .env.docker exec app python -c "
+import redis
+r = redis.Redis(host='redis', port=6379, password='docker-redis-password-123', decode_responses=True)
+print('Redis PING response:', r.ping())
+print('Redis info:', r.info('server')['redis_version'])
+"
+```
+
+**Issue: Migration failures**
+```bash
+# Check migration status
+docker-compose --env-file .env.docker run --rm app alembic current
+docker-compose --env-file .env.docker run --rm app alembic history
+
+# Reset and rerun migrations (CAUTION: Removes all data)
+docker-compose --env-file .env.docker down -v
+docker-compose --env-file .env.docker up -d postgres redis
+docker-compose --env-file .env.docker run --rm app alembic upgrade head
+```
+
+#### 🚀 **Production Deployment Considerations**
+
+**For Production Use:**
+1. **Security**: Update all passwords and secrets in `.env.docker`
+2. **Persistence**: Ensure proper volume mounting for data persistence
+3. **Monitoring**: Set up log aggregation and metrics collection
+4. **Backup**: Implement automated database backup strategies
+5. **Resource Limits**: Configure appropriate CPU and memory limits
+6. **Health Checks**: Monitor all service health endpoints
+7. **TLS/SSL**: Configure HTTPS for production endpoints
+
+**Performance Optimization:**
+```bash
+# Tune PostgreSQL for production
+docker-compose --env-file .env.docker exec postgres psql -U mindbridge -d mindbridge -c "
+ALTER SYSTEM SET shared_buffers = '256MB';
+ALTER SYSTEM SET effective_cache_size = '1GB';
+ALTER SYSTEM SET maintenance_work_mem = '64MB';
+SELECT pg_reload_conf();
+"
+
+# Monitor query performance
+docker-compose --env-file .env.docker exec postgres psql -U mindbridge -d mindbridge -c "
+SELECT query, mean_exec_time, calls
+FROM pg_stat_statements
+ORDER BY mean_exec_time DESC LIMIT 10;
+"
+```
+
+---
+
 ## Continuous Integration Requirements
 
 ### GitHub Actions Workflow
