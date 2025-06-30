@@ -1,5 +1,5 @@
 # Dockerfile for Mindbridge application
-FROM python:3.12-slim as builder
+FROM python:3.13-slim as builder
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
@@ -26,7 +26,7 @@ RUN poetry config virtualenvs.create false
 RUN poetry install --only=main --no-dev
 
 # Production stage
-FROM python:3.12-slim as production
+FROM python:3.13-slim as production
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
