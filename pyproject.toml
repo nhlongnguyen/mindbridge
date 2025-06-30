@@ -27,7 +27,7 @@ celery = "^5.3.4"
 sentence-transformers = "^4.1.0"
 GitPython = "^3.1.40"
 markdown = "^3.5.1"
-python-multipart = "^0.0.18"
+python-multipart = "^0.0.20"
 passlib = {extras = ["bcrypt"], version = "^1.7.4"}
 httpx = "^0.28.1"
 opentelemetry-api = "^1.21.0"
